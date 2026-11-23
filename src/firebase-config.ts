@@ -78,40 +78,57 @@ export async function testConnection(): Promise<void> {
 
 export interface ChallengeRegistrationInput {
   folio?: string;
-  fullName: string;
-  email: string;
-  department: string;
-  challengeTitle: string;
-  backgroundProblem: string;
-  category: ChallengeCategory;
-  participationType: ParticipationModality;
+  fullName?: string;
+  email?: string;
+  department?: string;
+  challengeTitle?: string;
+  backgroundProblem?: string;
+  problemDescription?: string;
+  category?: ChallengeCategory | string;
+  participationType?: ParticipationModality | string;
+  modality?: ParticipationModality | string;
   teamMembers?: string;
+  teammates?: string;
 }
+
+const safeTrim = (value: unknown): string =>
+  typeof value === 'string' ? value.trim() : '';
 
 export async function submitChallengeRegistration(
   input: ChallengeRegistrationInput
 ): Promise<{ docId: string; folio: string }> {
-  const folio = (input.folio ?? '').trim().toUpperCase();
+  const safeInput = input ?? {};
+  const folio = safeTrim(safeInput.folio).toUpperCase();
+
+  const rawModality = safeTrim(
+    safeInput.participationType ?? safeInput.modality
+  ).toLowerCase();
+
   const normalizedParticipationType: 'individual' | 'equipo' =
-    input.participationType === 'equipo' ||
-    String(input.participationType).toLowerCase() === 'en equipo' ||
-    String(input.participationType).toLowerCase() === 'equipo'
+    rawModality === 'equipo' || rawModality === 'en equipo'
       ? 'equipo'
       : 'individual';
+
+  const rawProblem = safeTrim(
+    safeInput.backgroundProblem ?? safeInput.problemDescription
+  );
+
+  const rawTeamMembers = safeTrim(
+    safeInput.teamMembers ?? safeInput.teammates
+  );
 
   const cleanTeamMembers =
     normalizedParticipationType === 'individual'
       ? ''
-      : (input.teamMembers ?? '').trim().slice(0, 300);
+      : rawTeamMembers.slice(0, 300);
 
-  // Construimos el objeto con EXACTAMENTE los campos permitidos por hasAll / hasOnly en firestore.rules
   const firestoreDoc: Record<string, unknown> = {
-    fullName: input.fullName.trim().slice(0, 100),
-    email: input.email.trim().toLowerCase().slice(0, 120),
-    department: input.department.trim().slice(0, 100),
-    challengeTitle: input.challengeTitle.trim().slice(0, 120),
-    backgroundProblem: input.backgroundProblem.trim().slice(0, 2000),
-    category: input.category.trim().slice(0, 80),
+    fullName: safeTrim(safeInput.fullName).slice(0, 100),
+    email: safeTrim(safeInput.email).toLowerCase().slice(0, 120),
+    department: safeTrim(safeInput.department).slice(0, 100),
+    challengeTitle: safeTrim(safeInput.challengeTitle).slice(0, 120),
+    backgroundProblem: rawProblem.slice(0, 2000),
+    category: safeTrim(safeInput.category).slice(0, 80),
     participationType: normalizedParticipationType,
     createdAt: serverTimestamp(),
   };
