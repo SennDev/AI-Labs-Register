@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import {
   doc,
-  getDocFromServer,
   getFirestore,
   serverTimestamp,
   setDoc,
@@ -10,7 +9,7 @@ import firebaseConfig from '../firebase-applet-config.json';
 import type { ChallengeCategory, ParticipationModality } from './utils/validation';
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 
 export const REGISTROS_COLLECTION = 'ia_labs_enero_registros';
 
@@ -62,19 +61,6 @@ export function handleFirestoreError(
   throw new Error(JSON.stringify(errInfo));
 }
 
-export async function testConnection(): Promise<void> {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message.includes('the client is offline')
-    ) {
-      console.error('Please check your Firebase configuration.');
-    }
-  }
-}
-
 export interface ChallengeRegistrationPayload {
   folio: string;
   fullName: string;
@@ -92,15 +78,30 @@ export interface ChallengeRegistrationPayload {
 export async function submitChallengeRegistration(
   payload: ChallengeRegistrationPayload
 ): Promise<{ docId: string; folio: string }> {
-  const docId = `${payload.folio}-${Date.now().toString(36).toUpperCase()}`;
+  const normalizedPayload: ChallengeRegistrationPayload = {
+    folio: payload.folio.trim().toUpperCase(),
+    fullName: payload.fullName.trim(),
+    email: payload.email.trim().toLowerCase(),
+    department: payload.department.trim(),
+    challengeTitle: payload.challengeTitle.trim(),
+    problemDescription: payload.problemDescription.trim(),
+    category: payload.category,
+    modality: payload.modality,
+    teammates: payload.modality === 'Individual' ? '' : payload.teammates.trim(),
+    commitmentAccepted: payload.commitmentAccepted,
+    edition: 'IA Labs - Enero',
+  };
+
+  // El ID del documento usa el folio (ej. IALAB-ENE-A1B2C3) para cumplir isValidId() en firestore.rules
+  const docId = normalizedPayload.folio;
   const docPath = `${REGISTROS_COLLECTION}/${docId}`;
 
   try {
     await setDoc(doc(db, REGISTROS_COLLECTION, docId), {
-      ...payload,
+      ...normalizedPayload,
       createdAt: serverTimestamp(),
     });
-    return { docId, folio: payload.folio };
+    return { docId, folio: normalizedPayload.folio };
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, docPath);
   }
