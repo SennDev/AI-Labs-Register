@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+:root {
+  --vw-navy: #002733;
+  --academy-teal: #008C82;
+  --ai-lime: #C2FE06;
+  --mist: #F0F6F6;
+  --white: #FFFFFF;
+
+  --shadow-dark: rgba(0, 39, 51, 0.09);
+  --shadow-dark-deep: rgba(0, 39, 51, 0.14);
+  --shadow-light: rgba(255, 255, 255, 0.92);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--mist);
+    color: var(--vw-navy);
+    font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--mist);
+    color: var(--vw-navy);
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  }
+
+  .font-mono-tabular {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ==========================================================================
+   Sistema Neomórfico sobre Mist (#F0F6F6)
+   ========================================================================== */
+
+.neo-surface {
+  background-color: var(--mist);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    12px 12px 26px var(--shadow-dark),
+    -12px -12px 26px var(--shadow-light);
+}
+
+.neo-surface-elevated {
+  background: linear-gradient(145deg, #f5f9f9 0%, #eaf2f2 100%);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    14px 14px 32px rgba(0, 39, 51, 0.1),
+    -14px -14px 32px rgba(255, 255, 255, 0.96);
+}
+
+.neo-surface-sm {
+  background-color: var(--mist);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    6px 6px 14px var(--shadow-dark),
+    -6px -6px 14px var(--shadow-light);
+}
+
+.neo-inset {
+  background-color: #e9f1f1;
+  border: 1px solid rgba(0, 39, 51, 0.05);
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 39, 51, 0.085),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.95);
+  transition:
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neo-inset:focus,
+.neo-inset:focus-within {
+  background-color: #edf4f4;
+  border-color: var(--academy-teal);
+  outline: none;
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 39, 51, 0.085),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.95),
+    0 0 0 3px rgba(0, 140, 130, 0.18);
+}
+
+.neo-inset-error {
+  background-color: #f6eeee;
+  border-color: #b42318;
+  box-shadow:
+    inset 4px 4px 10px rgba(180, 35, 24, 0.08),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.92),
+    0 0 0 2px rgba(180, 35, 24, 0.14);
+}
+
+.neo-inset-valid {
+  border-color: rgba(0, 140, 130, 0.55);
+}
+
+.neo-navy-panel {
+  background: radial-gradient(circle at 88% 14%, rgba(0, 140, 130, 0.24) 0%, rgba(0, 39, 51, 0) 48%),
+    linear-gradient(155deg, #003140 0%, #002733 65%, #001c25 100%);
+  box-shadow:
+    18px 22px 44px rgba(0, 39, 51, 0.22),
+    -10px -10px 28px rgba(255, 255, 255, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================================================
+   Botones táctiles y microinteracciones
+   ========================================================================== */
+
+.btn-lime {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--ai-lime);
+  color: var(--vw-navy);
+  font-weight: 700;
+  box-shadow:
+    0 8px 20px -4px rgba(0, 39, 51, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 160ms ease;
+}
+
+.btn-lime:hover:not(:disabled) {
+  background-color: #cbff24;
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 24px -4px rgba(0, 39, 51, 0.28),
+    0 0 0 3px rgba(194, 254, 6, 0.35);
+}
+
+.btn-lime:active:not(:disabled) {
+  transform: translateY(1px) scale(0.99);
+  box-shadow:
+    inset 2px 2px 6px rgba(0, 39, 51, 0.18),
+    0 4px 10px -2px rgba(0, 39, 51, 0.18);
+}
+
+.btn-lime:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btn-neo {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--mist);
+  color: var(--vw-navy);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow:
+    6px 6px 14px var(--shadow-dark),
+    -6px -6px 14px var(--shadow-light);
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 150ms ease;
+}
+
+.btn-neo:hover:not(:disabled) {
+  color: var(--academy-teal);
+  transform: translateY(-1px);
+}
+
+.btn-neo:active:not(:disabled),
+.btn-neo-active {
+  background-color: #e9f1f1;
+  color: var(--academy-teal);
+  border-color: rgba(0, 140, 130, 0.45);
+  box-shadow:
+    inset 4px 4px 10px rgba(0, 39, 51, 0.09),
+    inset -4px -4px 10px rgba(255, 255, 255, 0.94);
+  transform: translateY(0);
+}
+
+.btn-ripple-wave {
+  position: absolute;
+  border-radius: 9999px;
+  pointer-events: none;
+  background-color: rgba(0, 39, 51, 0.16);
+  transform: scale(0);
+  animation: ripple-expand 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes ripple-expand {
+  to {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+/* Scroll reveal (compositor-only, respeta zero-latency en el viewport inicial) */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 480ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 480ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-item.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Focus ring accesible global */
+:focus-visible {
+  outline: 2px solid var(--academy-teal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .btn-lime,
+  .btn-neo,
+  .neo-inset,
+  .btn-ripple-wave {
+    transition: none;
+    animation: none;
+  }
+}

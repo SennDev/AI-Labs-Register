@@ -1,0 +1,114 @@
+{
+  "entities": {
+    "ChallengeRegistration": {
+      "title": "ChallengeRegistration",
+      "description": "Postulación de reto operativo para Procurement Academy - IA Labs Edición Enero",
+      "type": "object",
+      "properties": {
+        "folio": {
+          "type": "string",
+          "description": "Identificador único de registro generado para el participante",
+          "minLength": 16,
+          "maxLength": 24,
+          "pattern": "^IALAB-ENE-[A-Z0-9]{6}$"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "Nombre completo del postulante",
+          "minLength": 5,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Correo electrónico institucional o autorizado",
+          "minLength": 6,
+          "maxLength": 120,
+          "pattern": "^[a-zA-Z0-9._%+-]+@(vw\\.com\\.mx|proveed-vw\\.com\\.mx|outlook\\.com)$"
+        },
+        "department": {
+          "type": "string",
+          "description": "Gerencia o área organizacional del participante",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "challengeTitle": {
+          "type": "string",
+          "description": "Resumen corto del reto propuesto",
+          "minLength": 10,
+          "maxLength": 100
+        },
+        "problemDescription": {
+          "type": "string",
+          "description": "Descripción detallada del problema de fondo, impacto y resultado esperado",
+          "minLength": 80,
+          "maxLength": 2000
+        },
+        "category": {
+          "type": "string",
+          "description": "Categoría temática del reto de IA",
+          "enum": [
+            "Automatización de tareas repetitivas",
+            "Análisis y cruce de datos",
+            "Gestión documental / reportes",
+            "Asistente de consulta / conocimiento",
+            "Otro"
+          ],
+          "minLength": 4,
+          "maxLength": 60
+        },
+        "modality": {
+          "type": "string",
+          "description": "Modalidad de participación en el laboratorio",
+          "enum": ["Individual", "En equipo"],
+          "minLength": 8,
+          "maxLength": 12
+        },
+        "teammates": {
+          "type": "string",
+          "description": "Nombres opcionales de compañeros en modalidad En equipo",
+          "minLength": 0,
+          "maxLength": 300
+        },
+        "commitmentAccepted": {
+          "type": "boolean",
+          "description": "Confirmación de compromiso de asistencia a las sesiones de enero"
+        },
+        "edition": {
+          "type": "string",
+          "description": "Edición fija de la convocatoria",
+          "enum": ["IA Labs - Enero"],
+          "minLength": 15,
+          "maxLength": 15
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Marca de tiempo del servidor de Firestore al crear el registro"
+        }
+      },
+      "required": [
+        "folio",
+        "fullName",
+        "email",
+        "department",
+        "challengeTitle",
+        "problemDescription",
+        "category",
+        "modality",
+        "teammates",
+        "commitmentAccepted",
+        "edition",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/ia_labs_enero_registros/{registroId}": {
+      "schema": {
+        "$ref": "#/entities/ChallengeRegistration"
+      },
+      "description": "Registro privado de postulaciones de retos para IA Labs Edición Enero (solo creación validada; lectura, actualización y borrado público bloqueados)"
+    }
+  }
+}

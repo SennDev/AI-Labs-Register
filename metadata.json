@@ -1,0 +1,6 @@
+{
+  "name": "IA Labs · Edición Enero — Procurement Academy",
+  "description": "Convocatoria oficial de Procurement Academy para postular retos operativos reales e impulsar soluciones con Inteligencia Artificial en IA Labs Enero.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
