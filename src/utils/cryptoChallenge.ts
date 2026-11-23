@@ -21,6 +21,13 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes;
 }
 
+function bytesToBase64UrlSafe(bytes: Uint8Array): string {
+  return bytesToBase64(bytes)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
 async function importPublicKey(): Promise<CryptoKey> {
   const spkiBytes = base64ToBytes(CHALLENGE_PUBLIC_KEY_SPKI_B64);
   const buffer = spkiBytes.buffer.slice(
@@ -37,13 +44,15 @@ async function importPublicKey(): Promise<CryptoKey> {
   );
 }
 
-/**
- * Cifra la descripción del reto con AES-GCM (256 bits) y envuelve la llave AES
- * con RSA-OAEP usando la clave pública configurada.
- */
-export async function encryptBackgroundProblem(plainText: string): Promise<string> {
+async function hybridEncryptToParts(plainText: string): Promise<{
+  wrappedB64Url: string;
+  ivB64Url: string;
+  cipherB64Url: string;
+}> {
   if (!CHALLENGE_PUBLIC_KEY_SPKI_B64) {
-    throw new Error('Falta configurar CHALLENGE_PUBLIC_KEY_SPKI_B64 en src/utils/cryptoChallenge.ts.');
+    throw new Error(
+      'Falta configurar CHALLENGE_PUBLIC_KEY_SPKI_B64 en src/utils/cryptoChallenge.ts.'
+    );
   }
 
   const encoder = new TextEncoder();
@@ -70,24 +79,26 @@ export async function encryptBackgroundProblem(plainText: string): Promise<strin
     rawAesKey
   );
 
-  const wrappedB64 = bytesToBase64(new Uint8Array(wrappedKeyBuffer));
-  const ivB64 = bytesToBase64(iv);
-  const cipherB64 = bytesToBase64(new Uint8Array(cipherBuffer));
-
-  return `enc:v1:${wrappedB64}.${ivB64}.${cipherB64}`;
-}
-
-function bytesToBase64UrlSafe(bytes: Uint8Array): string {
-  return bytesToBase64(bytes)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
+  return {
+    wrappedB64Url: bytesToBase64UrlSafe(new Uint8Array(wrappedKeyBuffer)),
+    ivB64Url: bytesToBase64UrlSafe(iv),
+    cipherB64Url: bytesToBase64UrlSafe(new Uint8Array(cipherBuffer)),
+  };
 }
 
 /**
- * Cifra el correo con AES-GCM (128 bits) envolviendo la clave AES con RSA-OAEP
- * y lo formatea como un correo sintácticamente válido (@vw.com.mx) para cumplir
- * con la regex de Firestore sin exponer el correo real en claro.
+ * Cifra la descripción del reto con AES-GCM (256 bits) y envuelve la llave AES
+ * con RSA-OAEP usando la clave pública configurada.
+ */
+export async function encryptBackgroundProblem(plainText: string): Promise<string> {
+  const { wrappedB64Url, ivB64Url, cipherB64Url } =
+    await hybridEncryptToParts(plainText);
+  return `enc:v1:${wrappedB64Url}.${ivB64Url}.${cipherB64Url}`;
+}
+
+/**
+ * Cifra el correo del participante conservando el formato de correo válido (@vw.com.mx)
+ * para cumplir con la expresión regular de Firestore sin exponerlo en texto plano.
  */
 export async function encryptEmailAddress(plainEmail: string): Promise<string> {
   const cleanEmail = plainEmail.trim().toLowerCase();
@@ -95,36 +106,7 @@ export async function encryptEmailAddress(plainEmail: string): Promise<string> {
     return '';
   }
 
-  const encoder = new TextEncoder();
-  const dataBytes = encoder.encode(cleanEmail);
-
-  const aesKey = await crypto.subtle.generateKey(
-    { name: 'AES-GCM', length: 128 },
-    true,
-    ['encrypt']
-  );
-
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const cipherBuffer = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    aesKey,
-    dataBytes
-  );
-
-  const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
-  const rsaPublicKey = await importPublicKey();
-  const wrappedKeyBuffer = await crypto.subtle.encrypt(
-    { name: 'RSA-OAEP' },
-    rsaPublicKey,
-    rawAesKey
-  );
-
-  // RSA-2048 produce 256 bytes envueltos; si excede los 120 chars de Firestore en el campo `email`,
-  // puedes guardar el correo cifrado también aquí o en un campo si ajustas reglas.
-  // Si usas clave RSA-2048, el bloque RSA cifrado mide 256 bytes (~342 chars en base64).
-  const wrappedPart = bytesToBase64UrlSafe(new Uint8Array(wrappedKeyBuffer));
-  const ivPart = bytesToBase64UrlSafe(iv);
-  const cipherPart = bytesToBase64UrlSafe(new Uint8Array(cipherBuffer));
-
-  return `enc1-${wrappedPart}-${ivPart}-${cipherPart}@vw.com.mx`;
+  const { wrappedB64Url, ivB64Url, cipherB64Url } =
+    await hybridEncryptToParts(cleanEmail);
+  return `mail1-${wrappedB64Url}-${ivB64Url}-${cipherB64Url}@vw.com.mx`;
 }
