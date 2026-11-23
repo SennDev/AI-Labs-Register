@@ -19,7 +19,7 @@ export class ErrorBoundary extends Component<Props, State> {
   public static getDerivedStateFromError(error: Error): State {
     return {
       hasError: true,
-      message: error.message || 'Ocurrió un error inesperado en la interfaz.',
+      message: error.message || 'An unexpected interface error occurred.',
     };
   }
 
@@ -34,16 +34,16 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#F0F6F6] text-[#002733] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] flex items-center justify-center p-6">
           <div className="neo-surface max-w-lg w-full rounded-3xl p-8 text-center">
-            <div className="neo-inset w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center text-[#b42318]">
+            <div className="neo-inset w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center text-[#b42318] dark:text-[#FDA29B]">
               <AlertTriangle className="w-7 h-7" aria-hidden="true" />
             </div>
-            <h1 className="text-2xl font-bold text-[#002733] mb-3">
-              No fue posible cargar la vista
+            <h1 className="text-2xl font-bold text-[#002733] dark:text-white mb-3">
+              Unable to load view
             </h1>
-            <p className="text-sm text-[#002733]/75 mb-6 leading-relaxed">
-              Se detectó una interrupción temporal al procesar la aplicación. Puedes intentar recargar la vista actual.
+            <p className="text-sm text-[#002733]/75 dark:text-[#CBE0E0] mb-6 leading-relaxed">
+              A temporary interruption occurred while rendering the application. You can try reloading the current view.
             </p>
             <button
               type="button"
@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
               className="btn-lime inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" aria-hidden="true" />
-              Reintentar
+              Try again
             </button>
           </div>
         </div>

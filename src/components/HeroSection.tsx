@@ -17,7 +17,7 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
     >
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-          {/* Bloque principal de alto contraste VW Navy */}
+          {/* High-contrast VW Navy focal panel */}
           <div className="lg:col-span-8 neo-navy-panel rounded-3xl p-7 sm:p-11 text-white flex flex-col justify-between">
             <div>
               <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
@@ -38,17 +38,17 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-white/80 tracking-wide">
                   <span className="text-[#C2FE06] font-semibold">IA Labs</span>
                   <span aria-hidden="true">·</span>
-                  <span>Edición Enero</span>
+                  <span>January Edition</span>
                 </div>
               </div>
 
               <h1 className="font-display text-[clamp(1.75rem,3.6vw,3.25rem)] font-extrabold leading-[1.14] tracking-tight text-white [text-wrap:balance] mb-5">
-                Postula un problema real de compras y prototipa su solución con IA.
+                Submit a real procurement problem and prototype its AI solution.
               </h1>
 
               <p className="text-base sm:text-lg text-white/85 leading-relaxed max-w-2xl mb-8">
-                En las sesiones prácticas de <strong className="text-white font-semibold">IA Labs · Enero</strong> de{' '}
-                <strong className="text-white font-semibold">Procurement Academy</strong>, trabajaremos sobre retos reales de tu operación diaria para diseñar y validar prototipos funcionales con Inteligencia Artificial.
+                During the hands-on <strong className="text-white font-semibold">IA Labs · January</strong> sessions at{' '}
+                <strong className="text-white font-semibold">Procurement Academy</strong>, we will work directly on real day-to-day operational bottlenecks to design and validate practical Artificial Intelligence prototypes.
               </p>
             </div>
 
@@ -61,7 +61,7 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 }}
                 className="btn-lime inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm sm:text-base font-bold cursor-pointer min-h-[44px]"
               >
-                Postular mi reto
+                Submit my challenge
                 <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
               </button>
 
@@ -69,13 +69,13 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 href="#guia"
                 className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium text-white/90 hover:text-[#C2FE06] transition-colors min-h-[44px]"
               >
-                Cómo plantear el problema
+                How to frame your problem
                 <ArrowDown className="w-4 h-4 shrink-0" aria-hidden="true" />
               </a>
             </div>
           </div>
 
-          {/* Columna lateral neomórfica sobre Mist */}
+          {/* Neomorphic companion summary panel */}
           <aside className="lg:col-span-4 neo-surface rounded-3xl p-7 sm:p-8 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-4 mb-6">
@@ -83,76 +83,76 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                   {!appIconError ? (
                     <img
                       src="./assets/Icono_App_512.png"
-                      alt="Insignia IA Labs Procurement Academy"
+                      alt="Procurement Academy IA Labs Badge"
                       className="w-full h-full object-contain rounded-xl"
                       referrerPolicy="no-referrer"
                       onError={() => setAppIconError(true)}
                     />
                   ) : (
-                    <Layers className="w-7 h-7 text-[#008C82]" aria-hidden="true" />
+                    <Layers className="w-7 h-7 text-[#008C82] dark:text-[#2DD4BF]" aria-hidden="true" />
                   )}
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#008C82] tracking-wide">
-                    Convocatoria Abierta
+                  <p className="text-xs font-semibold text-[#008C82] dark:text-[#2DD4BF] tracking-wide">
+                    Open Call
                   </p>
-                  <h2 className="font-display text-xl font-bold text-[#002733] leading-snug">
-                    IA Labs · Enero
+                  <h2 className="font-display text-xl font-bold text-[#002733] dark:text-white leading-snug">
+                    IA Labs · January
                   </h2>
                 </div>
               </div>
 
-              <div className="space-y-4 border-t border-[#002733]/10 pt-5">
+              <div className="space-y-4 border-t border-[#002733]/10 dark:border-white/10 pt-5">
                 <div className="flex items-start gap-3.5">
-                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] shrink-0 mt-0.5">
+                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
                     <Calendar className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#002733]">
-                      Sesiones prácticas en enero
+                    <p className="text-sm font-semibold text-[#002733] dark:text-white">
+                      Hands-on sessions in January
                     </p>
-                    <p className="text-xs sm:text-sm text-[#002733]/72 leading-relaxed">
-                      Acompañamiento guiado para pasar del cuello de botella al prototipo.
+                    <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
+                      Guided coaching to move from an operational bottleneck to a working prototype.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3.5">
-                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] shrink-0 mt-0.5">
+                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
                     <Users className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#002733]">
-                      Individual o en equipo
+                    <p className="text-sm font-semibold text-[#002733] dark:text-white">
+                      Individual or team format
                     </p>
-                    <p className="text-xs sm:text-sm text-[#002733]/72 leading-relaxed">
-                      Postula un caso propio o colabora con compañeros de tu gerencia.
+                    <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
+                      Submit a solo initiative or collaborate with colleagues from your department.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3.5">
-                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] shrink-0 mt-0.5">
+                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
                     <Layers className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#002733]">
-                      Sin requisitos previos de código
+                    <p className="text-sm font-semibold text-[#002733] dark:text-white">
+                      No prior coding required
                     </p>
-                    <p className="text-xs sm:text-sm text-[#002733]/72 leading-relaxed">
-                      Lo esencial es la claridad del problema de negocio y su impacto.
+                    <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
+                      What matters most is clearly articulating the business pain point and its impact.
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 pt-5 border-t border-[#002733]/10">
-              <p className="text-xs text-[#002733]/70 leading-relaxed">
-                Registro habilitado para dominios{' '}
-                <span className="font-mono-tabular font-semibold text-[#002733]">@vw.com.mx</span>,{' '}
-                <span className="font-mono-tabular font-semibold text-[#002733]">@proveed-vw.com.mx</span> y{' '}
-                <span className="font-mono-tabular font-semibold text-[#002733]">@outlook.com</span>.
+            <div className="mt-6 pt-5 border-t border-[#002733]/10 dark:border-white/10">
+              <p className="text-xs text-[#002733]/70 dark:text-[#CBE0E0] leading-relaxed">
+                Registration open for{' '}
+                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@vw.com.mx</span>,{' '}
+                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@proveed-vw.com.mx</span>, and{' '}
+                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@outlook.com</span> addresses.
               </p>
             </div>
           </aside>

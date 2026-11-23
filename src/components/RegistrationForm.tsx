@@ -16,17 +16,21 @@ import {
   User,
   Users,
 } from 'lucide-react';
+import type { ThemeMode } from '../App';
 import {
+  CATEGORY_LABELS,
   CHALLENGE_CATEGORIES,
   COOLDOWN_STORAGE_KEY,
   DEPARTMENT_OPTIONS,
   FIELD_LIMITS,
+  MODALITY_LABELS,
   buildSanitizedRegistroPayload,
   generateFolio,
   getRemainingCooldownSeconds,
   sanitizeText,
   validateField,
   validateRegistrationForm,
+  type ChallengeCategory,
   type ParticipationModality,
   type RegistrationFormInput,
   type ValidationErrors,
@@ -35,6 +39,7 @@ import { submitChallengeRegistration } from '../firebase-config';
 import { triggerRipple } from './Navbar';
 
 interface RegistrationFormProps {
+  theme: ThemeMode;
   templateRequest: { text: string; nonce: number } | null;
 }
 
@@ -44,7 +49,7 @@ interface SubmittedReceipt {
   email: string;
   department: string;
   challengeTitle: string;
-  category: string;
+  category: ChallengeCategory;
   modality: ParticipationModality;
   teammates: string;
   submittedAtLabel: string;
@@ -63,7 +68,10 @@ const INITIAL_INPUT: RegistrationFormInput = {
   commitmentAccepted: false,
 };
 
-export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
+export function RegistrationForm({
+  theme,
+  templateRequest,
+}: RegistrationFormProps) {
   const formId = useId();
   const [form, setForm] = useState<RegistrationFormInput>(INITIAL_INPUT);
   const [touched, setTouched] = useState<
@@ -81,12 +89,12 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
       return 0;
     }
   });
-  const [turqLogoError, setTurqLogoError] = useState(false);
+  const [badgeError, setBadgeError] = useState(false);
 
   const problemTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  // Actualiza el temporizador local de enfriamiento cada segundo cuando está activo
+  // Update local cooldown countdown every second while active
   useEffect(() => {
     if (cooldownSeconds <= 0) {
       return;
@@ -106,7 +114,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
     return () => window.clearInterval(interval);
   }, [cooldownSeconds]);
 
-  // Aplica la plantilla guía al campo de problema de fondo cuando se solicita
+  // Apply structured prompt template to problem description when requested
   useEffect(() => {
     if (!templateRequest) {
       return;
@@ -143,7 +151,6 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
           } else {
             delete updated[field];
           }
-          // Revalida detalle de departamento si cambia el selector
           if (field === 'departmentSelect' && (forceTouch || touched.departmentDetail)) {
             const detailErr = validateField('departmentDetail', next);
             if (detailErr) {
@@ -152,7 +159,6 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               delete updated.departmentDetail;
             }
           }
-          // Revalida compañeros si cambia la modalidad
           if (field === 'modality') {
             const teammatesErr = validateField('teammates', next);
             if (teammatesErr) {
@@ -224,7 +230,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
       return;
     }
 
-    // Verifica enfriamiento local
+    // Check local cooldown
     try {
       const saved = window.localStorage.getItem(COOLDOWN_STORAGE_KEY);
       const remaining = getRemainingCooldownSeconds(
@@ -233,12 +239,12 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
       if (remaining > 0) {
         setCooldownSeconds(remaining);
         setSubmitError(
-          `Por protección contra envíos duplicados, espera ${remaining} segundos antes de registrar otro caso.`
+          `To prevent duplicate submissions, please wait ${remaining} seconds before submitting another challenge.`
         );
         return;
       }
     } catch {
-      // Ignora si localStorage no está disponible
+      // Ignore if localStorage is unavailable
     }
 
     const allTouched: Partial<Record<keyof RegistrationFormInput, boolean>> = {
@@ -275,7 +281,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
       try {
         window.localStorage.setItem(COOLDOWN_STORAGE_KEY, String(now));
       } catch {
-        // Ignora errores de almacenamiento
+        // Ignore storage errors
       }
       setCooldownSeconds(getRemainingCooldownSeconds(now, now));
 
@@ -288,15 +294,15 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
         category: payload.category,
         modality: payload.modality,
         teammates: payload.teammates,
-        submittedAtLabel: new Intl.DateTimeFormat('es-MX', {
+        submittedAtLabel: new Intl.DateTimeFormat('en-US', {
           dateStyle: 'medium',
           timeStyle: 'short',
         }).format(new Date()),
       });
     } catch (error) {
-      console.error('Error al guardar postulación en Firestore:', error);
+      console.error('Error saving registration to Firestore:', error);
       setSubmitError(
-        'No fue posible completar el registro en este momento. Verifica tu conexión e intenta nuevamente.'
+        'We could not complete your registration right now. Please check your connection and try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -315,6 +321,11 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
     return Boolean(touched[field]) && !errors[field];
   };
 
+  const badgeSrc =
+    theme === 'dark'
+      ? './assets/Icono_App_512.png'
+      : './assets/Icono_Turquesa.png';
+
   if (receipt) {
     return (
       <section id="registro" className="scroll-mt-20 py-10 sm:py-16 px-4 sm:px-6">
@@ -325,37 +336,37 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
             className="neo-surface-elevated rounded-3xl p-7 sm:p-11"
             data-testid="registration-success"
           >
-            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[#002733]/10">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-[#002733]/10 dark:border-white/10">
               <div className="flex items-center gap-4">
-                <div className="neo-inset w-14 h-14 rounded-2xl flex items-center justify-center text-[#008C82] shrink-0">
+                <div className="neo-inset w-14 h-14 rounded-2xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0">
                   <CheckCircle2 className="w-8 h-8" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[#008C82] tracking-wide">
-                    Registro confirmado · IA Labs Enero
+                  <p className="text-xs font-semibold text-[#008C82] dark:text-[#2DD4BF] tracking-wide">
+                    Registration confirmed · IA Labs January
                   </p>
-                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733]">
-                    Postulación recibida
+                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] dark:text-white">
+                    Submission received
                   </h2>
                 </div>
               </div>
 
-              {!turqLogoError && (
+              {!badgeError && (
                 <img
-                  src="./assets/Icono_Turquesa.png"
+                  src={badgeSrc}
                   alt="Procurement Academy"
-                  className="w-10 h-10 object-contain"
+                  className="w-10 h-10 object-contain rounded-lg"
                   referrerPolicy="no-referrer"
-                  onError={() => setTurqLogoError(true)}
+                  onError={() => setBadgeError(true)}
                 />
               )}
             </div>
 
-            {/* Folio generado */}
+            {/* Generated reference code */}
             <div className="my-6 neo-navy-panel rounded-2xl p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-white/75 mb-1">
-                  Folio de seguimiento
+                  Reference folio
                 </p>
                 <p
                   className="font-mono-tabular text-2xl sm:text-3xl font-bold tracking-wider text-[#C2FE06]"
@@ -365,61 +376,74 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 </p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-xs text-white/75 mb-1">Fecha de registro</p>
+                <p className="text-xs text-white/75 mb-1">Submitted on</p>
                 <p className="text-sm font-medium text-white">
                   {receipt.submittedAtLabel}
                 </p>
               </div>
             </div>
 
-            {/* Resumen del registro */}
+            {/* Submission summary */}
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-8">
               <div className="neo-inset rounded-2xl p-4">
-                <dt className="text-xs text-[#002733]/65 mb-1">Postulante</dt>
-                <dd className="font-semibold text-[#002733] break-words">
+                <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
+                  Applicant
+                </dt>
+                <dd className="font-semibold text-[#002733] dark:text-white break-words">
                   {receipt.fullName}
                 </dd>
               </div>
               <div className="neo-inset rounded-2xl p-4">
-                <dt className="text-xs text-[#002733]/65 mb-1">Correo autorizado</dt>
-                <dd className="font-mono-tabular text-[13px] font-medium text-[#002733] break-all">
+                <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
+                  Authorized email
+                </dt>
+                <dd className="font-mono-tabular text-[13px] font-medium text-[#002733] dark:text-white break-all">
                   {receipt.email}
                 </dd>
               </div>
               <div className="neo-inset rounded-2xl p-4">
-                <dt className="text-xs text-[#002733]/65 mb-1">Gerencia / Área</dt>
-                <dd className="font-medium text-[#002733] break-words">
+                <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
+                  Department / Area
+                </dt>
+                <dd className="font-medium text-[#002733] dark:text-white break-words">
                   {receipt.department}
                 </dd>
               </div>
               <div className="neo-inset rounded-2xl p-4">
-                <dt className="text-xs text-[#002733]/65 mb-1">Categoría y Modalidad</dt>
-                <dd className="font-medium text-[#002733]">
-                  {receipt.category} · {receipt.modality}
+                <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
+                  Category & Format
+                </dt>
+                <dd className="font-medium text-[#002733] dark:text-white">
+                  {CATEGORY_LABELS[receipt.category]} · {MODALITY_LABELS[receipt.modality]}
                 </dd>
               </div>
               <div className="neo-inset rounded-2xl p-4 sm:col-span-2">
-                <dt className="text-xs text-[#002733]/65 mb-1">Título del reto</dt>
-                <dd className="font-semibold text-[#002733]">
+                <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
+                  Challenge title
+                </dt>
+                <dd className="font-semibold text-[#002733] dark:text-white">
                   {receipt.challengeTitle}
                 </dd>
                 {receipt.teammates && (
-                  <p className="mt-2 text-xs text-[#002733]/75">
-                    Equipo: {receipt.teammates}
+                  <p className="mt-2 text-xs text-[#002733]/75 dark:text-[#CBE0E0]">
+                    Team members: {receipt.teammates}
                   </p>
                 )}
               </div>
             </dl>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-[#002733]/10">
-              <div className="flex items-center gap-2 text-xs text-[#002733]/75">
-                <Clock className="w-4 h-4 text-[#008C82] shrink-0" aria-hidden="true" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-[#002733]/10 dark:border-white/10">
+              <div className="flex items-center gap-2 text-xs text-[#002733]/75 dark:text-[#CBE0E0]">
+                <Clock
+                  className="w-4 h-4 text-[#008C82] dark:text-[#2DD4BF] shrink-0"
+                  aria-hidden="true"
+                />
                 {cooldownSeconds > 0 ? (
                   <span className="font-mono-tabular">
-                    Protección anti-duplicados activa ({cooldownSeconds}s para nuevo envío)
+                    Duplicate protection active ({cooldownSeconds}s until next submission)
                   </span>
                 ) : (
-                  <span>Listo para registrar un nuevo reto si lo necesitas.</span>
+                  <span>Ready to submit another challenge if needed.</span>
                 )}
               </div>
 
@@ -431,8 +455,11 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 }}
                 className="btn-neo inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold cursor-pointer min-h-[44px]"
               >
-                <PlusCircle className="w-4 h-4 text-[#008C82]" aria-hidden="true" />
-                Registrar otro caso
+                <PlusCircle
+                  className="w-4 h-4 text-[#008C82] dark:text-[#C2FE06]"
+                  aria-hidden="true"
+                />
+                Submit another challenge
               </button>
             </div>
           </div>
@@ -445,15 +472,15 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
     <section id="registro" className="scroll-mt-20 py-10 sm:py-16 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
         <div className="neo-surface-elevated rounded-3xl p-6 sm:p-10 md:p-12 reveal-item is-visible">
-          <div className="mb-8 pb-6 border-b border-[#002733]/10">
-            <p className="text-sm font-semibold text-[#008C82] mb-2">
-              Formulario de inscripción
+          <div className="mb-8 pb-6 border-b border-[#002733]/10 dark:border-white/10">
+            <p className="text-sm font-semibold text-[#008C82] dark:text-[#2DD4BF] mb-2">
+              Registration Form
             </p>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] tracking-tight [text-wrap:balance]">
-              Postula tu reto para IA Labs · Enero
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] dark:text-white tracking-tight [text-wrap:balance]">
+              Submit your challenge for IA Labs · January
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-[#002733]/75 leading-relaxed max-w-2xl">
-              Completa los campos con la descripción de tu problema operativo. Todos los datos se almacenan de forma privada y confidencial.
+            <p className="mt-2 text-sm sm:text-base text-[#002733]/75 dark:text-[#CBE0E0] leading-relaxed max-w-2xl">
+              Complete the fields below with a clear description of your operational problem. All submissions are encrypted client-side and stored privately.
             </p>
           </div>
 
@@ -463,14 +490,14 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
             noValidate
             className="space-y-7"
           >
-            {/* Fila 1: Nombre completo y Correo institucional */}
+            {/* Row 1: Full name & Authorized email */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
                   htmlFor={`${formId}-fullName`}
-                  className="block text-sm font-semibold text-[#002733] mb-2"
+                  className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
-                  Nombre completo <span className="text-[#008C82]">*</span>
+                  Full name <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -479,7 +506,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                     type="text"
                     autoComplete="name"
                     maxLength={FIELD_LIMITS.fullNameMax}
-                    placeholder="Ej. Laura Hernández Vázquez"
+                    placeholder="e.g. Laura Hernandez Vazquez"
                     value={form.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     onBlur={() => handleBlur('fullName')}
@@ -487,7 +514,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                     aria-describedby={
                       errors.fullName ? `${formId}-fullName-error` : undefined
                     }
-                    className={`w-full rounded-2xl px-4 py-3.5 pr-10 text-sm sm:text-base text-[#002733] placeholder:text-[#002733]/40 neo-inset ${
+                    className={`w-full rounded-2xl px-4 py-3.5 pr-10 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] placeholder:text-[#002733]/40 dark:placeholder:text-[#CBE0E0]/45 neo-inset ${
                       errors.fullName
                         ? 'neo-inset-error'
                         : isFieldValid('fullName')
@@ -497,7 +524,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   />
                   {isFieldValid('fullName') && (
                     <Check
-                      className="w-4 h-4 text-[#008C82] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                      className="w-4 h-4 text-[#008C82] dark:text-[#2DD4BF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                       aria-hidden="true"
                     />
                   )}
@@ -506,14 +533,14 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   <p
                     id={`${formId}-fullName-error`}
                     role="alert"
-                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                   >
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{errors.fullName}</span>
                   </p>
                 ) : (
-                  <p className="mt-2 text-xs text-[#002733]/60">
-                    Mínimo 5 caracteres, solo letras y espacios.
+                  <p className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]">
+                    Minimum 5 characters, letters and spaces only.
                   </p>
                 )}
               </div>
@@ -521,9 +548,9 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               <div>
                 <label
                   htmlFor={`${formId}-email`}
-                  className="block text-sm font-semibold text-[#002733] mb-2"
+                  className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
-                  Correo electrónico autorizado <span className="text-[#008C82]">*</span>
+                  Authorized email address <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -533,13 +560,13 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                     autoComplete="email"
                     inputMode="email"
                     maxLength={FIELD_LIMITS.emailMax}
-                    placeholder="nombre.apellido@vw.com.mx"
+                    placeholder="first.last@vw.com.mx"
                     value={form.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     onBlur={() => handleBlur('email')}
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={`${formId}-email-help`}
-                    className={`w-full rounded-2xl px-4 py-3.5 pr-10 text-sm sm:text-base text-[#002733] placeholder:text-[#002733]/40 neo-inset ${
+                    className={`w-full rounded-2xl px-4 py-3.5 pr-10 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] placeholder:text-[#002733]/40 dark:placeholder:text-[#CBE0E0]/45 neo-inset ${
                       errors.email
                         ? 'neo-inset-error'
                         : isFieldValid('email')
@@ -549,7 +576,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   />
                   {isFieldValid('email') && (
                     <Check
-                      className="w-4 h-4 text-[#008C82] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                      className="w-4 h-4 text-[#008C82] dark:text-[#2DD4BF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                       aria-hidden="true"
                     />
                   )}
@@ -558,27 +585,30 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   <p
                     id={`${formId}-email-help`}
                     role="alert"
-                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                   >
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{errors.email}</span>
                   </p>
                 ) : (
-                  <p id={`${formId}-email-help`} className="mt-2 text-xs text-[#002733]/60">
-                    Acepta únicamente @vw.com.mx, @proveed-vw.com.mx o @outlook.com.
+                  <p
+                    id={`${formId}-email-help`}
+                    className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]"
+                  >
+                    Accepts @vw.com.mx, @proveed-vw.com.mx, or @outlook.com only.
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Fila 2: Gerencia / Área (selector + detalle) */}
+            {/* Row 2: Department / Area (select + optional sub-area) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
                   htmlFor={`${formId}-departmentSelect`}
-                  className="block text-sm font-semibold text-[#002733] mb-2"
+                  className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
-                  Gerencia / Área <span className="text-[#008C82]">*</span>
+                  Department / Area <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <select
                   id={`${formId}-departmentSelect`}
@@ -594,7 +624,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                       ? `${formId}-departmentSelect-error`
                       : undefined
                   }
-                  className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] neo-inset cursor-pointer ${
+                  className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] neo-inset cursor-pointer ${
                     errors.departmentSelect
                       ? 'neo-inset-error'
                       : isFieldValid('departmentSelect')
@@ -602,7 +632,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                         : ''
                   }`}
                 >
-                  <option value="">Selecciona tu área...</option>
+                  <option value="">Select your department...</option>
                   {DEPARTMENT_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
@@ -613,7 +643,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   <p
                     id={`${formId}-departmentSelect-error`}
                     role="alert"
-                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                   >
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{errors.departmentSelect}</span>
@@ -624,13 +654,13 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               <div>
                 <label
                   htmlFor={`${formId}-departmentDetail`}
-                  className="block text-sm font-semibold text-[#002733] mb-2"
+                  className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
                   {form.departmentSelect === 'Otro (especificar)'
-                    ? 'Especifica tu gerencia o área'
-                    : 'Subárea o célula (opcional)'}
+                    ? 'Specify your department or area'
+                    : 'Sub-area or team cell (optional)'}
                   {form.departmentSelect === 'Otro (especificar)' && (
-                    <span className="text-[#008C82]"> *</span>
+                    <span className="text-[#008C82] dark:text-[#C2FE06]"> *</span>
                   )}
                 </label>
                 <input
@@ -640,8 +670,8 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   maxLength={80}
                   placeholder={
                     form.departmentSelect === 'Otro (especificar)'
-                      ? 'Nombre de tu gerencia o departamento'
-                      : 'Ej. Célula Eléctricos / CapEx Planta'
+                      ? 'Name of your department or unit'
+                      : 'e.g. Powertrain / Plant CapEx'
                   }
                   value={form.departmentDetail}
                   onChange={(e) =>
@@ -654,7 +684,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                       ? `${formId}-departmentDetail-error`
                       : undefined
                   }
-                  className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] placeholder:text-[#002733]/40 neo-inset ${
+                  className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] placeholder:text-[#002733]/40 dark:placeholder:text-[#CBE0E0]/45 neo-inset ${
                     errors.departmentDetail ? 'neo-inset-error' : ''
                   }`}
                 />
@@ -662,7 +692,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   <p
                     id={`${formId}-departmentDetail-error`}
                     role="alert"
-                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                    className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                   >
                     <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>{errors.departmentDetail}</span>
@@ -671,16 +701,16 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               </div>
             </div>
 
-            {/* Título del reto */}
+            {/* Challenge Title */}
             <div>
               <div className="flex items-center justify-between gap-4 mb-2">
                 <label
                   htmlFor={`${formId}-challengeTitle`}
-                  className="block text-sm font-semibold text-[#002733]"
+                  className="block text-sm font-semibold text-[#002733] dark:text-white"
                 >
-                  Título del reto <span className="text-[#008C82]">*</span>
+                  Challenge title <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
-                <span className="font-mono-tabular text-xs text-[#002733]/65">
+                <span className="font-mono-tabular text-xs text-[#002733]/65 dark:text-[#9FC0C0]">
                   {cleanTitleLength} / {FIELD_LIMITS.challengeTitleMax}
                 </span>
               </div>
@@ -690,7 +720,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   name="challengeTitle"
                   type="text"
                   maxLength={FIELD_LIMITS.challengeTitleMax}
-                  placeholder="Ej. Comparativa automática de cotizaciones RFQ de proveedores"
+                  placeholder="e.g. Automated comparison of supplier RFQ quotes"
                   value={form.challengeTitle}
                   onChange={(e) =>
                     updateField('challengeTitle', e.target.value)
@@ -698,7 +728,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   onBlur={() => handleBlur('challengeTitle')}
                   aria-invalid={Boolean(errors.challengeTitle)}
                   aria-describedby={`${formId}-challengeTitle-help`}
-                  className={`w-full rounded-2xl px-4 py-3.5 pr-10 text-sm sm:text-base text-[#002733] placeholder:text-[#002733]/40 neo-inset ${
+                  className={`w-full rounded-2xl px-4 py-3.5 pr-10 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] placeholder:text-[#002733]/40 dark:placeholder:text-[#CBE0E0]/45 neo-inset ${
                     errors.challengeTitle
                       ? 'neo-inset-error'
                       : isFieldValid('challengeTitle')
@@ -708,7 +738,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 />
                 {isFieldValid('challengeTitle') && (
                   <Check
-                    className="w-4 h-4 text-[#008C82] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    className="w-4 h-4 text-[#008C82] dark:text-[#2DD4BF] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                     aria-hidden="true"
                   />
                 )}
@@ -717,27 +747,32 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 <p
                   id={`${formId}-challengeTitle-help`}
                   role="alert"
-                  className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                  className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                 >
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{errors.challengeTitle}</span>
                 </p>
               ) : (
-                <p id={`${formId}-challengeTitle-help`} className="mt-2 text-xs text-[#002733]/60">
-                  Resumen claro entre 10 y 100 caracteres.
+                <p
+                  id={`${formId}-challengeTitle-help`}
+                  className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]"
+                >
+                  Clear summary between 10 and 100 characters.
                 </p>
               )}
             </div>
 
-            {/* Categoría del reto */}
+            {/* Challenge Category */}
             <fieldset>
-              <legend className="block text-sm font-semibold text-[#002733] mb-3">
-                Categoría del reto <span className="text-[#008C82]">*</span>
+              <legend className="block text-sm font-semibold text-[#002733] dark:text-white mb-3">
+                Challenge category <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
               </legend>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {CHALLENGE_CATEGORIES.map((categoryOption, idx) => {
                   const selected = form.category === categoryOption;
-                  const isLastOdd = idx === CHALLENGE_CATEGORIES.length - 1 && CHALLENGE_CATEGORIES.length % 2 === 1;
+                  const isLastOdd =
+                    idx === CHALLENGE_CATEGORIES.length - 1 &&
+                    CHALLENGE_CATEGORIES.length % 2 === 1;
                   return (
                     <label
                       key={categoryOption}
@@ -745,8 +780,8 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                         isLastOdd ? 'sm:col-span-2' : ''
                       } ${
                         selected
-                          ? 'btn-neo-active border border-[#008C82]/50 text-[#002733]'
-                          : 'btn-neo text-[#002733]/85'
+                          ? 'btn-neo-active border border-[#008C82]/50 dark:border-[#00C4B4]/70 text-[#002733] dark:text-white'
+                          : 'btn-neo text-[#002733]/85 dark:text-[#D5E6E6]'
                       }`}
                     >
                       <input
@@ -763,15 +798,17 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                         aria-hidden="true"
                         className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
                           selected
-                            ? 'border-[#008C82] bg-[#008C82]'
-                            : 'border-[#002733]/30 bg-[#F0F6F6]'
+                            ? 'border-[#008C82] bg-[#008C82] dark:border-[#00C4B4] dark:bg-[#008C82]'
+                            : 'border-[#002733]/30 dark:border-white/30 bg-[#F0F6F6] dark:bg-[#03131A]'
                         }`}
                       >
                         {selected && (
                           <span className="w-1.5 h-1.5 rounded-full bg-[#C2FE06]" />
                         )}
                       </span>
-                      <span className="leading-snug">{categoryOption}</span>
+                      <span className="leading-snug">
+                        {CATEGORY_LABELS[categoryOption]}
+                      </span>
                     </label>
                   );
                 })}
@@ -779,7 +816,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               {errors.category && (
                 <p
                   role="alert"
-                  className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                  className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                 >
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{errors.category}</span>
@@ -787,23 +824,23 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               )}
             </fieldset>
 
-            {/* Problema de fondo a resolver */}
+            {/* Underlying Problem to Solve */}
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <label
                   htmlFor={`${formId}-problemDescription`}
-                  className="block text-sm font-semibold text-[#002733]"
+                  className="block text-sm font-semibold text-[#002733] dark:text-white"
                 >
-                  Problema de fondo a resolver <span className="text-[#008C82]">*</span>
+                  Underlying problem to solve <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <span
                   className={`font-mono-tabular text-xs font-semibold ${
                     cleanProblemLength >= FIELD_LIMITS.problemDescriptionMin
-                      ? 'text-[#008C82]'
-                      : 'text-[#002733]/65'
+                      ? 'text-[#008C82] dark:text-[#2DD4BF]'
+                      : 'text-[#002733]/65 dark:text-[#9FC0C0]'
                   }`}
                 >
-                  {cleanProblemLength} / {FIELD_LIMITS.problemDescriptionMax} caracteres
+                  {cleanProblemLength} / {FIELD_LIMITS.problemDescriptionMax} characters
                 </span>
               </div>
 
@@ -813,7 +850,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 name="problemDescription"
                 rows={6}
                 maxLength={FIELD_LIMITS.problemDescriptionMax}
-                placeholder="Describe el flujo actual, el cuello de botella, su impacto en horas o calidad y qué resultado esperas validar con IA..."
+                placeholder="Describe the current workflow, the bottleneck, its impact on hours or quality, and the outcome you hope to validate with AI..."
                 value={form.problemDescription}
                 onChange={(e) =>
                   updateField('problemDescription', e.target.value)
@@ -821,7 +858,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 onBlur={() => handleBlur('problemDescription')}
                 aria-invalid={Boolean(errors.problemDescription)}
                 aria-describedby={`${formId}-problemDescription-help`}
-                className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] placeholder:text-[#002733]/40 neo-inset leading-relaxed resize-y min-h-[150px] ${
+                className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] placeholder:text-[#002733]/40 dark:placeholder:text-[#CBE0E0]/45 neo-inset leading-relaxed resize-y min-h-[150px] ${
                   errors.problemDescription
                     ? 'neo-inset-error'
                     : isFieldValid('problemDescription')
@@ -830,22 +867,22 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 }`}
               />
 
-              {/* Barra sutil de progreso al mínimo de 80 caracteres */}
+              {/* Progress bar toward 80-character minimum */}
               <div className="mt-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex-1 max-w-xs h-1.5 rounded-full bg-[#002733]/10 overflow-hidden">
+                <div className="flex-1 max-w-xs h-1.5 rounded-full bg-[#002733]/10 dark:bg-white/10 overflow-hidden">
                   <div
                     className={`h-full transition-all duration-200 ${
                       cleanProblemLength >= FIELD_LIMITS.problemDescriptionMin
-                        ? 'bg-[#008C82]'
-                        : 'bg-[#002733]/40'
+                        ? 'bg-[#008C82] dark:bg-[#C2FE06]'
+                        : 'bg-[#002733]/40 dark:bg-white/40'
                     }`}
                     style={{ width: `${problemProgressPct}%` }}
                   />
                 </div>
-                <span className="text-xs text-[#002733]/65">
+                <span className="text-xs text-[#002733]/65 dark:text-[#9FC0C0]">
                   {cleanProblemLength >= FIELD_LIMITS.problemDescriptionMin
-                    ? 'Longitud mínima alcanzada (80+ caracteres)'
-                    : `Mínimo requerido: ${FIELD_LIMITS.problemDescriptionMin} caracteres`}
+                    ? 'Minimum length reached (80+ characters)'
+                    : `Minimum required: ${FIELD_LIMITS.problemDescriptionMin} characters`}
                 </span>
               </div>
 
@@ -853,7 +890,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 <p
                   id={`${formId}-problemDescription-help`}
                   role="alert"
-                  className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                  className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                 >
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{errors.problemDescription}</span>
@@ -861,11 +898,11 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               )}
             </div>
 
-            {/* Modalidad de participación */}
+            {/* Participation Format */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <fieldset>
-                <legend className="block text-sm font-semibold text-[#002733] mb-3">
-                  Modalidad de participación <span className="text-[#008C82]">*</span>
+                <legend className="block text-sm font-semibold text-[#002733] dark:text-white mb-3">
+                  Participation format <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </legend>
                 <div className="grid grid-cols-2 gap-3">
                   {(['Individual', 'En equipo'] as const).map((mode) => {
@@ -876,8 +913,8 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                         key={mode}
                         className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-semibold cursor-pointer min-h-[48px] transition-all ${
                           active
-                            ? 'btn-neo-active border border-[#008C82]/50 text-[#002733]'
-                            : 'btn-neo text-[#002733]/80'
+                            ? 'btn-neo-active border border-[#008C82]/50 dark:border-[#00C4B4]/70 text-[#002733] dark:text-white'
+                            : 'btn-neo text-[#002733]/80 dark:text-[#D5E6E6]'
                         }`}
                       >
                         <input
@@ -890,11 +927,15 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                         />
                         <Icon
                           className={`w-4 h-4 shrink-0 ${
-                            active ? 'text-[#008C82]' : 'text-[#002733]/60'
+                            active
+                              ? 'text-[#008C82] dark:text-[#C2FE06]'
+                              : 'text-[#002733]/60 dark:text-[#9FC0C0]'
                           }`}
                           aria-hidden="true"
                         />
-                        <span className="whitespace-nowrap">{mode}</span>
+                        <span className="whitespace-nowrap">
+                          {MODALITY_LABELS[mode]}
+                        </span>
                       </label>
                     );
                   })}
@@ -905,16 +946,16 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 <div>
                   <label
                     htmlFor={`${formId}-teammates`}
-                    className="block text-sm font-semibold text-[#002733] mb-2"
+                    className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                   >
-                    Compañeros de equipo (opcional)
+                    Team members (optional)
                   </label>
                   <input
                     id={`${formId}-teammates`}
                     name="teammates"
                     type="text"
                     maxLength={FIELD_LIMITS.teammatesMax}
-                    placeholder="Ej. Ana López, Roberto Díaz"
+                    placeholder="e.g. Ana Lopez, Roberto Diaz"
                     value={form.teammates}
                     onChange={(e) => updateField('teammates', e.target.value)}
                     onBlur={() => handleBlur('teammates')}
@@ -922,7 +963,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                     aria-describedby={
                       errors.teammates ? `${formId}-teammates-error` : undefined
                     }
-                    className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] placeholder:text-[#002733]/40 neo-inset ${
+                    className={`w-full rounded-2xl px-4 py-3.5 text-sm sm:text-base text-[#002733] dark:text-[#F0F6F6] placeholder:text-[#002733]/40 dark:placeholder:text-[#CBE0E0]/45 neo-inset ${
                       errors.teammates ? 'neo-inset-error' : ''
                     }`}
                   />
@@ -930,21 +971,21 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                     <p
                       id={`${formId}-teammates-error`}
                       role="alert"
-                      className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                      className="mt-2 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                     >
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                       <span>{errors.teammates}</span>
                     </p>
                   ) : (
-                    <p className="mt-2 text-xs text-[#002733]/60">
-                      Puedes incluir hasta 300 caracteres con los nombres de tu equipo.
+                    <p className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]">
+                      Include up to 300 characters with your teammates&apos; names.
                     </p>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Confirmación de compromiso */}
+            {/* Attendance commitment */}
             <div className="neo-inset rounded-2xl p-5">
               <label
                 htmlFor={`${formId}-commitment`}
@@ -966,11 +1007,11 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                   }
                   className="mt-0.5 w-5 h-5 rounded accent-[#008C82] cursor-pointer shrink-0"
                 />
-                <span className="text-sm text-[#002733] leading-relaxed">
-                  <strong className="font-semibold">
-                    Confirmo mi compromiso de asistencia
+                <span className="text-sm text-[#002733] dark:text-[#E6F2F2] leading-relaxed">
+                  <strong className="font-semibold text-[#002733] dark:text-white">
+                    I confirm my commitment to attend
                   </strong>{' '}
-                  a las sesiones prácticas de <strong className="font-semibold">IA Labs · Enero</strong> de Procurement Academy para desarrollar y validar este reto.
+                  the hands-on <strong className="font-semibold text-[#002733] dark:text-white">IA Labs · January</strong> sessions at Procurement Academy to develop and validate this challenge.
                 </span>
               </label>
 
@@ -978,7 +1019,7 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 <p
                   id={`${formId}-commitment-error`}
                   role="alert"
-                  className="mt-2.5 flex items-start gap-1.5 text-xs font-medium text-[#b42318]"
+                  className="mt-2.5 flex items-start gap-1.5 text-xs font-medium text-[#b42318] dark:text-[#FDA29B]"
                 >
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{errors.commitmentAccepted}</span>
@@ -986,21 +1027,21 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
               )}
             </div>
 
-            {/* Error general de envío */}
+            {/* Submission error banner */}
             {submitError && (
               <div
                 role="alert"
-                className="rounded-2xl bg-[#fef2f2] border border-[#b42318]/25 p-4 flex items-start gap-3 text-sm text-[#b42318]"
+                className="rounded-2xl bg-[#fef2f2] dark:bg-[#2A1216] border border-[#b42318]/25 dark:border-[#F97066]/40 p-4 flex items-start gap-3 text-sm text-[#b42318] dark:text-[#FDA29B]"
               >
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
                 <span>{submitError}</span>
               </div>
             )}
 
-            {/* Botón de envío */}
+            {/* Submit action */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-              <p className="text-xs text-[#002733]/65 leading-relaxed">
-                Al enviar, tu registro se guarda directamente en Firestore con validación de dominio y sello de tiempo oficial.
+              <p className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] leading-relaxed">
+                Upon submission, your proposal is encrypted client-side and stored in Firestore with domain validation and an official server timestamp.
               </p>
 
               <button
@@ -1012,17 +1053,17 @@ export function RegistrationForm({ templateRequest }: RegistrationFormProps) {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                    Registrando postulación...
+                    Submitting challenge...
                   </>
                 ) : cooldownSeconds > 0 ? (
                   <>
                     <Clock className="w-5 h-5" aria-hidden="true" />
-                    Disponible en {cooldownSeconds}s
+                    Available in {cooldownSeconds}s
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" aria-hidden="true" />
-                    Enviar postulación
+                    Submit challenge
                   </>
                 )}
               </button>

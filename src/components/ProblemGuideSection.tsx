@@ -1,52 +1,62 @@
 import { useState } from 'react';
 import { ClipboardCheck, Compass, Sparkles, TrendingUp } from 'lucide-react';
+import type { ThemeMode } from '../App';
 import { triggerRipple } from './Navbar';
 
 interface ProblemGuideSectionProps {
+  theme: ThemeMode;
   onApplyTemplate: (templateText: string) => void;
 }
 
 const GUIDE_CARDS = [
   {
     step: '01.',
-    title: 'Proceso o cuello de botella actual',
+    title: 'Current workflow or bottleneck',
     description:
-      'Describe qué actividad repetitiva, captura manual o espera de validación frena hoy tu flujo de trabajo.',
+      'Describe which repetitive task, manual data entry, or approval delay slows down your daily workflow.',
     example:
-      'Ejemplo: “Cada semana consolidamos manualmente 12 hojas de cálculo con cotizaciones RFQ en distintos formatos antes de comparar ofertas.”',
+      'Example: “Every Monday we manually consolidate 12 RFQ spreadsheets in different supplier layouts before we can compare pricing.”',
     icon: Compass,
   },
   {
     step: '02.',
-    title: 'Impacto en tiempo, calidad u operación',
+    title: 'Time, quality, or operational impact',
     description:
-      'Cuantifica o explica qué costo operativo tiene el problema: horas invertidas, retrabajos o demoras en respuesta.',
+      'Quantify or explain the operational cost of the problem: hours spent, rework cycles, or delayed supplier responses.',
     example:
-      'Ejemplo: “Toma 6 horas semanales por comprador y genera omisiones en vigencias de precios o cláusulas de entrega.”',
+      'Example: “It takes 6 hours per buyer each week and leads to missed price validity dates or delivery terms.”',
     icon: TrendingUp,
   },
   {
     step: '03.',
-    title: 'Resultado esperado con IA',
+    title: 'Expected AI outcome',
     description:
-      'Indica qué entregable o mejora concreta esperas validar durante las sesiones de enero, sin preocuparte por la herramienta técnica.',
+      'Define the concrete deliverable or improvement you want to validate during the January sessions, without worrying about the technical stack.',
     example:
-      'Ejemplo: “Un prototipo que lea las cotizaciones y genere automáticamente una tabla comparativa con alertas de desviación.”',
+      'Example: “A prototype that reads incoming quotes and automatically builds a comparison matrix flagging deviations.”',
     icon: Sparkles,
   },
 ] as const;
 
-const PROBLEM_TEMPLATE = `1. Proceso o cuello de botella actual:
-Describe paso a paso qué tarea o flujo genera retrasos o trabajo manual hoy.
+const PROBLEM_TEMPLATE = `1. Current workflow or bottleneck:
+Describe step by step which task or handoff causes delays or manual rework today.
 
-2. Impacto en tiempo, calidad u operación:
-Indica cuántas horas toma, con qué frecuencia ocurre y qué errores o riesgos provoca.
+2. Time, quality, or operational impact:
+Indicate how many hours it takes, how often it happens, and what errors or risks it creates.
 
-3. Resultado esperado:
-Explica qué te gustaría lograr o validar en las sesiones de IA Labs en enero.`;
+3. Expected outcome:
+Explain what you want to achieve or validate during the January IA Labs sessions.`;
 
-export function ProblemGuideSection({ onApplyTemplate }: ProblemGuideSectionProps) {
-  const [turqIconError, setTurqIconError] = useState(false);
+export function ProblemGuideSection({
+  theme,
+  onApplyTemplate,
+}: ProblemGuideSectionProps) {
+  const [iconError, setIconError] = useState(false);
+
+  const badgeSrc =
+    theme === 'dark'
+      ? './assets/Icono_App_512.png'
+      : './assets/Icono_Turquesa.png';
 
   return (
     <section id="guia" className="scroll-mt-20 py-10 sm:py-14 px-4 sm:px-6">
@@ -54,25 +64,25 @@ export function ProblemGuideSection({ onApplyTemplate }: ProblemGuideSectionProp
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 sm:mb-10 reveal-item">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-3">
-              {!turqIconError && (
+              {!iconError && (
                 <img
-                  src="./assets/Icono_Turquesa.png"
+                  src={badgeSrc}
                   alt=""
                   aria-hidden="true"
-                  className="w-7 h-7 object-contain"
+                  className="w-7 h-7 object-contain rounded-md"
                   referrerPolicy="no-referrer"
-                  onError={() => setTurqIconError(true)}
+                  onError={() => setIconError(true)}
                 />
               )}
-              <span className="text-sm font-semibold text-[#008C82]">
-                Guía de postulación
+              <span className="text-sm font-semibold text-[#008C82] dark:text-[#2DD4BF]">
+                Submission Guide
               </span>
             </div>
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] tracking-tight [text-wrap:balance]">
-              ¿Cómo plantear tu problema de fondo?
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] dark:text-white tracking-tight [text-wrap:balance]">
+              How should you frame your underlying problem?
             </h2>
-            <p className="mt-2.5 text-sm sm:text-base text-[#002733]/75 leading-relaxed">
-              Los mejores casos de <strong className="font-semibold text-[#002733]">IA Labs</strong> parten de un dolor operativo bien definido, no de una tecnología específica. Estructura tu propuesta con estos tres elementos:
+            <p className="mt-2.5 text-sm sm:text-base text-[#002733]/75 dark:text-[#CBE0E0] leading-relaxed">
+              The strongest <strong className="font-semibold text-[#002733] dark:text-white">IA Labs</strong> cases start with a clearly defined operational pain point rather than a specific tool. Structure your proposal around these three elements:
             </p>
           </div>
 
@@ -84,8 +94,11 @@ export function ProblemGuideSection({ onApplyTemplate }: ProblemGuideSectionProp
             }}
             className="btn-neo inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold self-start md:self-auto shrink-0 cursor-pointer min-h-[44px]"
           >
-            <ClipboardCheck className="w-4 h-4 text-[#008C82] shrink-0" aria-hidden="true" />
-            Usar estructura en el formulario
+            <ClipboardCheck
+              className="w-4 h-4 text-[#008C82] dark:text-[#C2FE06] shrink-0"
+              aria-hidden="true"
+            />
+            Use template in form
           </button>
         </div>
 
@@ -100,25 +113,25 @@ export function ProblemGuideSection({ onApplyTemplate }: ProblemGuideSectionProp
               >
                 <div>
                   <div className="flex items-center justify-between gap-4 mb-5">
-                    <span className="font-mono-tabular text-sm font-semibold text-[#008C82]">
+                    <span className="font-mono-tabular text-sm font-semibold text-[#008C82] dark:text-[#C2FE06]">
                       {card.step}
                     </span>
-                    <div className="neo-inset w-10 h-10 rounded-xl flex items-center justify-center text-[#008C82]">
+                    <div className="neo-inset w-10 h-10 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF]">
                       <Icon className="w-5 h-5" aria-hidden="true" />
                     </div>
                   </div>
 
-                  <h3 className="font-display text-lg font-bold text-[#002733] leading-snug mb-2.5">
+                  <h3 className="font-display text-lg font-bold text-[#002733] dark:text-white leading-snug mb-2.5">
                     {card.title}
                   </h3>
 
-                  <p className="text-sm text-[#002733]/75 leading-relaxed mb-5">
+                  <p className="text-sm text-[#002733]/75 dark:text-[#CBE0E0] leading-relaxed mb-5">
                     {card.description}
                   </p>
                 </div>
 
                 <div className="neo-inset rounded-2xl p-4">
-                  <p className="text-xs sm:text-[13px] text-[#002733]/80 leading-relaxed">
+                  <p className="text-xs sm:text-[13px] text-[#002733]/80 dark:text-[#D5E6E6] leading-relaxed">
                     {card.example}
                   </p>
                 </div>

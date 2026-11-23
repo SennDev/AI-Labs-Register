@@ -7,17 +7,46 @@ import { ProblemGuideSection } from './components/ProblemGuideSection';
 import { RegistrationForm } from './components/RegistrationForm';
 import { testConnection } from './firebase-config';
 
+export type ThemeMode = 'light' | 'dark';
+
+const THEME_STORAGE_KEY = 'ia_labs_theme';
+
+function getInitialTheme(): ThemeMode {
+  try {
+    return window.localStorage.getItem(THEME_STORAGE_KEY) === 'dark'
+      ? 'dark'
+      : 'light';
+  } catch {
+    return 'light';
+  }
+}
+
 export default function App() {
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [templateRequest, setTemplateRequest] = useState<{
     text: string;
     nonce: number;
   } | null>(null);
 
   useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // Ignore storage errors in restricted environments
+    }
+  }, [theme]);
+
+  useEffect(() => {
     void testConnection();
   }, []);
 
-  // Entrada escalonada al hacer scroll mediante IntersectionObserver
+  // Staggered scroll-reveal via IntersectionObserver
   useEffect(() => {
     const items = Array.from(document.querySelectorAll<HTMLElement>('.reveal-item'));
     if (items.length === 0) {
@@ -48,6 +77,10 @@ export default function App() {
     return () => observer.disconnect();
   }, []);
 
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   const scrollToForm = () => {
     const el = document.getElementById('registro');
     if (el) {
@@ -62,12 +95,22 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen flex flex-col bg-[#F0F6F6] text-[#002733]">
-        <Navbar onNavigateToForm={scrollToForm} />
+      <div className="min-h-screen flex flex-col bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] transition-colors duration-200">
+        <Navbar
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onNavigateToForm={scrollToForm}
+        />
         <main className="flex-1">
           <HeroSection onNavigateToForm={scrollToForm} />
-          <ProblemGuideSection onApplyTemplate={handleApplyTemplate} />
-          <RegistrationForm templateRequest={templateRequest} />
+          <ProblemGuideSection
+            theme={theme}
+            onApplyTemplate={handleApplyTemplate}
+          />
+          <RegistrationForm
+            theme={theme}
+            templateRequest={templateRequest}
+          />
         </main>
         <Footer />
       </div>

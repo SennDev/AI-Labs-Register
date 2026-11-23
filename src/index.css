@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --vw-navy: #002733;
@@ -7,16 +8,24 @@
   --mist: #F0F6F6;
   --white: #FFFFFF;
 
+  --surface-canvas: #F0F6F6;
+  --surface-text: #002733;
   --shadow-dark: rgba(0, 39, 51, 0.09);
   --shadow-dark-deep: rgba(0, 39, 51, 0.14);
   --shadow-light: rgba(255, 255, 255, 0.92);
 }
 
+html.dark {
+  color-scheme: dark;
+  --surface-canvas: #041820;
+  --surface-text: #F0F6F6;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
-    background-color: var(--mist);
-    color: var(--vw-navy);
+    background-color: var(--surface-canvas);
+    color: var(--surface-text);
     font-family: "DM Sans", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -24,9 +33,10 @@
 
   body {
     margin: 0;
-    background-color: var(--mist);
-    color: var(--vw-navy);
+    background-color: var(--surface-canvas);
+    color: var(--surface-text);
     overflow-x: hidden;
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
   h1,
@@ -41,10 +51,15 @@
     font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
     font-variant-numeric: tabular-nums;
   }
+
+  html.dark select option {
+    background-color: #07222D;
+    color: #F0F6F6;
+  }
 }
 
 /* ==========================================================================
-   Sistema Neomórfico sobre Mist (#F0F6F6)
+   Neomorphic Elevation System (Light Mist & Dark VW Midnight)
    ========================================================================== */
 
 .neo-surface {
@@ -55,12 +70,28 @@
     -12px -12px 26px var(--shadow-light);
 }
 
+html.dark .neo-surface {
+  background-color: #07222D;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    12px 12px 28px rgba(1, 10, 14, 0.68),
+    -8px -8px 20px rgba(20, 74, 92, 0.2);
+}
+
 .neo-surface-elevated {
   background: linear-gradient(145deg, #f5f9f9 0%, #eaf2f2 100%);
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow:
     14px 14px 32px rgba(0, 39, 51, 0.1),
     -14px -14px 32px rgba(255, 255, 255, 0.96);
+}
+
+html.dark .neo-surface-elevated {
+  background: linear-gradient(145deg, #082633 0%, #051B24 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    16px 16px 34px rgba(1, 9, 13, 0.72),
+    -10px -10px 24px rgba(22, 82, 102, 0.18);
 }
 
 .neo-surface-sm {
@@ -71,9 +102,17 @@
     -6px -6px 14px var(--shadow-light);
 }
 
+html.dark .neo-surface-sm {
+  background-color: #082734;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    6px 6px 16px rgba(1, 10, 14, 0.65),
+    -4px -4px 12px rgba(20, 74, 92, 0.18);
+}
+
 .neo-inset {
   background-color: #e9f1f1;
-  border: 1px solid rgba(0, 39, 51, 0.05);
+  border: 1px solid rgba(0, 39, 51, 0.06);
   box-shadow:
     inset 4px 4px 10px rgba(0, 39, 51, 0.085),
     inset -4px -4px 10px rgba(255, 255, 255, 0.95);
@@ -81,6 +120,14 @@
     box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
     border-color 180ms cubic-bezier(0.16, 1, 0.3, 1),
     background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.dark .neo-inset {
+  background-color: #03131A;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow:
+    inset 4px 4px 10px rgba(1, 8, 12, 0.76),
+    inset -3px -3px 8px rgba(24, 84, 104, 0.16);
 }
 
 .neo-inset:focus,
@@ -94,6 +141,17 @@
     0 0 0 3px rgba(0, 140, 130, 0.18);
 }
 
+html.dark .neo-inset:focus,
+html.dark .neo-inset:focus-within {
+  background-color: #041720;
+  border-color: #00C4B4;
+  outline: none;
+  box-shadow:
+    inset 4px 4px 10px rgba(1, 8, 12, 0.76),
+    inset -3px -3px 8px rgba(24, 84, 104, 0.18),
+    0 0 0 3px rgba(0, 196, 180, 0.24);
+}
+
 .neo-inset-error {
   background-color: #f6eeee;
   border-color: #b42318;
@@ -103,8 +161,20 @@
     0 0 0 2px rgba(180, 35, 24, 0.14);
 }
 
+html.dark .neo-inset-error {
+  background-color: #1D1014;
+  border-color: #F97066;
+  box-shadow:
+    inset 4px 4px 10px rgba(10, 2, 4, 0.65),
+    0 0 0 2px rgba(249, 112, 102, 0.22);
+}
+
 .neo-inset-valid {
   border-color: rgba(0, 140, 130, 0.55);
+}
+
+html.dark .neo-inset-valid {
+  border-color: rgba(0, 196, 180, 0.6);
 }
 
 .neo-navy-panel {
@@ -116,8 +186,18 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+html.dark .neo-navy-panel {
+  background: radial-gradient(circle at 88% 14%, rgba(0, 140, 130, 0.28) 0%, rgba(0, 39, 51, 0) 52%),
+    linear-gradient(155deg, #083242 0%, #04202B 68%, #02141B 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    18px 22px 44px rgba(1, 9, 13, 0.72),
+    -8px -8px 22px rgba(20, 74, 92, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
 /* ==========================================================================
-   Botones táctiles y microinteracciones
+   Tactile Buttons & Micro-interactions
    ========================================================================== */
 
 .btn-lime {
@@ -167,12 +247,27 @@
   transition:
     transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    color 150ms ease;
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+html.dark .btn-neo {
+  background-color: #082734;
+  color: #E6F2F2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    6px 6px 14px rgba(1, 10, 14, 0.6),
+    -4px -4px 10px rgba(22, 82, 102, 0.18);
 }
 
 .btn-neo:hover:not(:disabled) {
   color: var(--academy-teal);
   transform: translateY(-1px);
+}
+
+html.dark .btn-neo:hover:not(:disabled) {
+  color: #C2FE06;
+  border-color: rgba(194, 254, 6, 0.35);
 }
 
 .btn-neo:active:not(:disabled),
@@ -186,6 +281,17 @@
   transform: translateY(0);
 }
 
+html.dark .btn-neo:active:not(:disabled),
+html.dark .btn-neo-active {
+  background-color: #03151D;
+  color: #FFFFFF;
+  border-color: rgba(0, 196, 180, 0.65);
+  box-shadow:
+    inset 4px 4px 10px rgba(1, 8, 12, 0.78),
+    inset -3px -3px 8px rgba(24, 84, 104, 0.16);
+  transform: translateY(0);
+}
+
 .btn-ripple-wave {
   position: absolute;
   border-radius: 9999px;
@@ -195,6 +301,10 @@
   animation: ripple-expand 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+html.dark .btn-neo .btn-ripple-wave {
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
 @keyframes ripple-expand {
   to {
     transform: scale(2.8);
@@ -202,7 +312,7 @@
   }
 }
 
-/* Scroll reveal (compositor-only, respeta zero-latency en el viewport inicial) */
+/* Scroll reveal (compositor-only, zero-latency above the fold) */
 .reveal-item {
   opacity: 0;
   transform: translateY(16px);
@@ -216,10 +326,14 @@
   transform: translateY(0);
 }
 
-/* Focus ring accesible global */
+/* Global accessible focus ring */
 :focus-visible {
   outline: 2px solid var(--academy-teal);
   outline-offset: 2px;
+}
+
+html.dark :focus-visible {
+  outline-color: #C2FE06;
 }
 
 @media (prefers-reduced-motion: reduce) {

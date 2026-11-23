@@ -22,6 +22,14 @@ export const CHALLENGE_CATEGORIES = [
 
 export type ChallengeCategory = (typeof CHALLENGE_CATEGORIES)[number];
 
+export const CATEGORY_LABELS: Record<ChallengeCategory, string> = {
+  'Automatización de tareas repetitivas': 'Repetitive task automation',
+  'Análisis y cruce de datos': 'Data analysis & cross-referencing',
+  'Gestión documental / reportes': 'Document management & reporting',
+  'Asistente de consulta / conocimiento': 'Knowledge & query assistant',
+  Otro: 'Other',
+};
+
 export const DEPARTMENT_OPTIONS = [
   'M-BI',
   'M-BM',
@@ -36,6 +44,11 @@ export const DEPARTMENT_OPTIONS = [
 ] as const;
 
 export type ParticipationModality = 'Individual' | 'En equipo';
+
+export const MODALITY_LABELS: Record<ParticipationModality, string> = {
+  Individual: 'Individual',
+  'En equipo': 'Team',
+};
 
 export interface RegistrationFormInput {
   fullName: string;
@@ -84,7 +97,7 @@ export const COOLDOWN_MS = 45_000;
 export const COOLDOWN_STORAGE_KEY = 'ia_labs_enero_last_submit_ts';
 
 /**
- * Sanitiza entradas de texto eliminando etiquetas HTML, esquemas javascript: y caracteres de control.
+ * Sanitizes text input by stripping HTML tags, javascript: schemes, and control characters.
  */
 export function sanitizeText(value: string, preserveNewlines = false): string {
   if (typeof value !== 'string') {
@@ -142,16 +155,16 @@ export function validateField(
     case 'fullName': {
       const clean = sanitizeText(input.fullName, false);
       if (!clean) {
-        return 'Ingresa tu nombre completo.';
+        return 'Please enter your full name.';
       }
       if (clean.length < FIELD_LIMITS.fullNameMin) {
-        return `Debe tener al menos ${FIELD_LIMITS.fullNameMin} caracteres.`;
+        return `Must be at least ${FIELD_LIMITS.fullNameMin} characters long.`;
       }
       if (clean.length > FIELD_LIMITS.fullNameMax) {
-        return `No debe superar los ${FIELD_LIMITS.fullNameMax} caracteres.`;
+        return `Must not exceed ${FIELD_LIMITS.fullNameMax} characters.`;
       }
       if (!FULL_NAME_REGEX.test(clean)) {
-        return 'Usa únicamente letras y espacios válidos (sin números ni símbolos).';
+        return 'Use letters and valid spaces only (no numbers or symbols).';
       }
       return undefined;
     }
@@ -159,13 +172,13 @@ export function validateField(
     case 'email': {
       const normalized = normalizeEmail(input.email);
       if (!normalized) {
-        return 'Ingresa tu correo institucional o autorizado.';
+        return 'Please enter your corporate or authorized email address.';
       }
       if (normalized.length > FIELD_LIMITS.emailMax) {
-        return `El correo no debe superar ${FIELD_LIMITS.emailMax} caracteres.`;
+        return `Email must not exceed ${FIELD_LIMITS.emailMax} characters.`;
       }
       if (!EMAIL_DOMAIN_REGEX.test(normalized)) {
-        return 'Solo se permiten correos terminados en @vw.com.mx, @proveed-vw.com.mx o @outlook.com.';
+        return 'Only email addresses ending in @vw.com.mx, @proveed-vw.com.mx, or @outlook.com are allowed.';
       }
       return undefined;
     }
@@ -173,7 +186,7 @@ export function validateField(
     case 'departmentSelect': {
       const clean = sanitizeText(input.departmentSelect, false);
       if (!clean) {
-        return 'Selecciona tu gerencia o área.';
+        return 'Please select your department or area.';
       }
       return undefined;
     }
@@ -182,11 +195,11 @@ export function validateField(
       const cleanSelect = sanitizeText(input.departmentSelect, false);
       const cleanDetail = sanitizeText(input.departmentDetail, false);
       if (cleanSelect === 'Otro (especificar)' && cleanDetail.length < 2) {
-        return 'Especifica el nombre de tu gerencia o área (mínimo 2 caracteres).';
+        return 'Please specify your department or area name (minimum 2 characters).';
       }
       const composed = composeDepartment(input.departmentSelect, input.departmentDetail);
       if (composed.length > FIELD_LIMITS.departmentMax) {
-        return `La gerencia y detalle no deben superar ${FIELD_LIMITS.departmentMax} caracteres.`;
+        return `Department and detail combined must not exceed ${FIELD_LIMITS.departmentMax} characters.`;
       }
       return undefined;
     }
@@ -194,13 +207,13 @@ export function validateField(
     case 'challengeTitle': {
       const clean = sanitizeText(input.challengeTitle, false);
       if (!clean) {
-        return 'Escribe un título breve para tu reto.';
+        return 'Please enter a short title for your challenge.';
       }
       if (clean.length < FIELD_LIMITS.challengeTitleMin) {
-        return `El título debe tener al menos ${FIELD_LIMITS.challengeTitleMin} caracteres.`;
+        return `Title must be at least ${FIELD_LIMITS.challengeTitleMin} characters long.`;
       }
       if (clean.length > FIELD_LIMITS.challengeTitleMax) {
-        return `El título no debe superar ${FIELD_LIMITS.challengeTitleMax} caracteres.`;
+        return `Title must not exceed ${FIELD_LIMITS.challengeTitleMax} characters.`;
       }
       return undefined;
     }
@@ -208,13 +221,13 @@ export function validateField(
     case 'problemDescription': {
       const clean = sanitizeText(input.problemDescription, true);
       if (!clean) {
-        return 'Describe el problema de fondo que deseas resolver.';
+        return 'Please describe the underlying problem you want to solve.';
       }
       if (clean.length < FIELD_LIMITS.problemDescriptionMin) {
-        return `Faltan ${FIELD_LIMITS.problemDescriptionMin - clean.length} caracteres para completar el mínimo de ${FIELD_LIMITS.problemDescriptionMin}.`;
+        return `${FIELD_LIMITS.problemDescriptionMin - clean.length} more characters needed to reach the ${FIELD_LIMITS.problemDescriptionMin}-character minimum.`;
       }
       if (clean.length > FIELD_LIMITS.problemDescriptionMax) {
-        return `Has superado el máximo permitido de ${FIELD_LIMITS.problemDescriptionMax} caracteres.`;
+        return `You have exceeded the maximum limit of ${FIELD_LIMITS.problemDescriptionMax} characters.`;
       }
       return undefined;
     }
@@ -225,14 +238,14 @@ export function validateField(
         !clean ||
         !(CHALLENGE_CATEGORIES as readonly string[]).includes(clean)
       ) {
-        return 'Selecciona una categoría válida para el reto.';
+        return 'Please select a valid category for your challenge.';
       }
       return undefined;
     }
 
     case 'modality': {
       if (input.modality !== 'Individual' && input.modality !== 'En equipo') {
-        return 'Selecciona una modalidad de participación.';
+        return 'Please select a participation format.';
       }
       return undefined;
     }
@@ -241,7 +254,7 @@ export function validateField(
       if (input.modality === 'En equipo') {
         const clean = sanitizeText(input.teammates, false);
         if (clean.length > FIELD_LIMITS.teammatesMax) {
-          return `No debe superar ${FIELD_LIMITS.teammatesMax} caracteres.`;
+          return `Must not exceed ${FIELD_LIMITS.teammatesMax} characters.`;
         }
       }
       return undefined;
@@ -249,7 +262,7 @@ export function validateField(
 
     case 'commitmentAccepted': {
       if (!input.commitmentAccepted) {
-        return 'Debes confirmar tu compromiso para asistir a los IA Labs en enero.';
+        return 'Please confirm your commitment to attend the January IA Labs sessions.';
       }
       return undefined;
     }

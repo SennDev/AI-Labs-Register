@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  CATEGORY_LABELS,
+  CHALLENGE_CATEGORIES,
+  DEPARTMENT_OPTIONS,
+  MODALITY_LABELS,
   buildSanitizedRegistroPayload,
   composeDepartment,
   generateFolio,
@@ -16,11 +20,11 @@ function makeValidInput(): RegistrationFormInput {
   return {
     fullName: 'María Fernanda López García',
     email: 'maria.lopez@vw.com.mx',
-    departmentSelect: 'Compras Directas / Materiales Productivos',
-    departmentDetail: 'Célula Tren Motriz',
-    challengeTitle: 'Automatización de comparativas RFQ de proveedores',
+    departmentSelect: DEPARTMENT_OPTIONS[0],
+    departmentDetail: 'Powertrain Cell',
+    challengeTitle: 'Automated RFQ supplier quote comparison',
     problemDescription:
-      'Cada semana invertimos más de diez horas consolidando cotizaciones en Excel de distintos proveedores, lo que retrasa la adjudicación y aumenta el riesgo de error humano.',
+      'Every week we spend over ten hours consolidating Excel quotes from different suppliers manually, which delays sourcing awards and increases the risk of human error.',
     category: 'Análisis y cruce de datos',
     modality: 'En equipo',
     teammates: 'Carlos Ruiz, Sofía Mendoza',
@@ -30,16 +34,16 @@ function makeValidInput(): RegistrationFormInput {
 
 test('sanitizeText strips HTML tags, script payloads, and collapses whitespace', () => {
   assert.equal(
-    sanitizeText('  <b>Hola</b> <script>alert(1)</script>  Mundo  '),
-    'Hola alert(1) Mundo'
+    sanitizeText('  <b>Hello</b> <script>alert(1)</script>  World  '),
+    'Hello alert(1) World'
   );
   assert.equal(
-    sanitizeText('javascript:alert(1) onclick=hack() Texto limpio'),
-    'alert(1) hack() Texto limpio'
+    sanitizeText('javascript:alert(1) onclick=hack() Clean text'),
+    'alert(1) hack() Clean text'
   );
   assert.equal(
-    sanitizeText('Línea 1\r\n\r\n\r\nLínea 2   con espacios', true),
-    'Línea 1\n\nLínea 2 con espacios'
+    sanitizeText('Line 1\r\n\r\n\r\nLine 2   with spaces', true),
+    'Line 1\n\nLine 2 with spaces'
   );
 });
 
@@ -67,9 +71,9 @@ test('email validation allows only @vw.com.mx, @proveed-vw.com.mx, and @outlook.
 
   for (const blocked of [
     'usuario@gmail.com',
-    'alguien@yahoo.com',
+    'someone@yahoo.com',
     'hack@vw.com.mx.evil.com',
-    'sin-arroba.com',
+    'no-at-sign.com',
     '   ',
   ]) {
     assert.ok(
@@ -95,7 +99,7 @@ test('problemDescription enforces 80..2000 character boundaries after trim', () 
   assert.ok(
     validateField('problemDescription', {
       ...base,
-      problemDescription: '   Texto muy corto   ',
+      problemDescription: '   Too short   ',
     })
   );
   assert.ok(
@@ -113,23 +117,17 @@ test('problemDescription enforces 80..2000 character boundaries after trim', () 
   );
 });
 
-test('department composition handles selector + detail and Otro (especificar)', () => {
-  assert.equal(
-    composeDepartment('Otro (especificar)', 'Ingeniería de Costos'),
-    'Ingeniería de Costos'
-  );
-  assert.equal(
-    composeDepartment('Compras Indirectas / Servicios y CapEx', ''),
-    'Compras Indirectas / Servicios y CapEx'
-  );
-  const base = makeValidInput();
-  assert.ok(
-    validateField('departmentDetail', {
-      ...base,
-      departmentSelect: 'Otro (especificar)',
-      departmentDetail: ' ',
-    })
-  );
+test('department composition preserves department codes and optional detail', () => {
+  assert.equal(composeDepartment('M-BI', 'Powertrain'), 'M-BI — Powertrain');
+  assert.equal(composeDepartment('M-BM', ''), 'M-BM');
+});
+
+test('every stored category and modality has an English display label', () => {
+  for (const cat of CHALLENGE_CATEGORIES) {
+    assert.ok(CATEGORY_LABELS[cat].length > 0);
+  }
+  assert.equal(MODALITY_LABELS.Individual, 'Individual');
+  assert.equal(MODALITY_LABELS['En equipo'], 'Team');
 });
 
 test('validateRegistrationForm accepts valid complete payload and rejects incomplete ones', () => {
@@ -152,7 +150,7 @@ test('buildSanitizedRegistroPayload clears teammates when Individual', () => {
   const input = {
     ...makeValidInput(),
     modality: 'Individual' as const,
-    teammates: 'Debe limpiarse',
+    teammates: 'Should be cleared',
   };
   const payload = buildSanitizedRegistroPayload(input, 'IALAB-ENE-AB12CD');
   assert.equal(payload.teammates, '');
