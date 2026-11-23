@@ -8,6 +8,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import { encryptBackgroundProblem } from './utils/cryptoChallenge';
 import type { ChallengeCategory, ParticipationModality } from './utils/validation';
 
 const app = initializeApp(firebaseConfig);
@@ -111,7 +112,9 @@ export async function submitChallengeRegistration(
 
   const rawProblem = safeTrim(
     safeInput.backgroundProblem ?? safeInput.problemDescription
-  );
+  ).slice(0, 2000);
+
+  const encryptedBackgroundProblem = await encryptBackgroundProblem(rawProblem);
 
   const rawTeamMembers = safeTrim(
     safeInput.teamMembers ?? safeInput.teammates
@@ -127,7 +130,7 @@ export async function submitChallengeRegistration(
     email: safeTrim(safeInput.email).toLowerCase().slice(0, 120),
     department: safeTrim(safeInput.department).slice(0, 100),
     challengeTitle: safeTrim(safeInput.challengeTitle).slice(0, 120),
-    backgroundProblem: rawProblem.slice(0, 2000),
+    backgroundProblem: encryptedBackgroundProblem,
     category: safeTrim(safeInput.category).slice(0, 80),
     participationType: normalizedParticipationType,
     createdAt: serverTimestamp(),
