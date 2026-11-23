@@ -22,7 +22,7 @@ service cloud.firestore {
         request.resource.data.fullName.size() <= 100 &&
 
         request.resource.data.email is string &&
-        request.resource.data.email.size() <= 120 &&
+        request.resource.data.email.size() <= 600 &&
         request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@(vw\\.com\\.mx|proveed-vw\\.com\\.mx|outlook\\.com)$') &&
 
         request.resource.data.department is string &&
@@ -35,7 +35,7 @@ service cloud.firestore {
 
         request.resource.data.backgroundProblem is string &&
         request.resource.data.backgroundProblem.size() >= 120 &&
-        request.resource.data.backgroundProblem.size() <= 4500 &&
+        request.resource.data.backgroundProblem.size() <= 6000 &&
 
         request.resource.data.category is string &&
         request.resource.data.category.size() >= 3 &&
