@@ -23,12 +23,16 @@ export const CHALLENGE_CATEGORIES = [
 export type ChallengeCategory = (typeof CHALLENGE_CATEGORIES)[number];
 
 export const DEPARTMENT_OPTIONS = [
-  'Compras Directas / Materiales Productivos',
-  'Compras Indirectas / Servicios y CapEx',
-  'Estrategia, Control y Procesos de Compras',
-  'Desarrollo y Calidad de Proveedores',
-  'Abastecimiento y Logística de Compras',
-  'Otro (especificar)',
+  'M-BI',
+  'M-BM',
+  'M-BN',
+  'M-BP',
+  'M-BS',
+  'M-BX',
+  'M-BZ',
+  'M-BA',
+  'M-BW',
+  'M-BB',
 ] as const;
 
 export type ParticipationModality = 'Individual' | 'En equipo';
