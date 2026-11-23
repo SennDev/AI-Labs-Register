@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import {
   doc,
+  getDocFromServer,
   getFirestore,
   serverTimestamp,
   setDoc,
@@ -61,6 +62,19 @@ export function handleFirestoreError(
   throw new Error(JSON.stringify(errInfo));
 }
 
+export async function testConnection(): Promise<void> {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes('the client is offline')
+    ) {
+      console.error('Please check your Firebase configuration.');
+    }
+  }
+}
+
 export interface ChallengeRegistrationPayload {
   folio: string;
   fullName: string;
@@ -92,7 +106,6 @@ export async function submitChallengeRegistration(
     edition: 'IA Labs - Enero',
   };
 
-  // El ID del documento usa el folio (ej. IALAB-ENE-A1B2C3) para cumplir isValidId() en firestore.rules
   const docId = normalizedPayload.folio;
   const docPath = `${REGISTROS_COLLECTION}/${docId}`;
 
