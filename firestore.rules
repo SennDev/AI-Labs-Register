@@ -8,16 +8,15 @@ service cloud.firestore {
     // Colección: ia_labs_enero_registros
     // ===============================================================
 
-    // Red de seguridad global: denegar lectura y escritura por defecto
     match /{document=**} {
       allow read, write: if false;
     }
 
     function isValidId(id) {
       return id is string
-        && id.size() >= 1
-        && id.size() <= 128
-        && id.matches('^[a-zA-Z0-9_\\-]+$');
+        && id.size() >= 16
+        && id.size() <= 24
+        && id.matches('^IALAB-ENE-[A-Z0-9]{6}$');
     }
 
     function incoming() {
@@ -110,10 +109,7 @@ service cloud.firestore {
     }
 
     match /ia_labs_enero_registros/{registroId} {
-      // Privacidad estricta: nadie puede leer, listar, editar o borrar registros desde cliente
       allow read, update, delete: if false;
-
-      // Solo creación validada con esquema exacto, dominios permitidos y timestamp del servidor
       allow create: if isValidId(registroId) && isValidRegistro(incoming());
     }
   }
