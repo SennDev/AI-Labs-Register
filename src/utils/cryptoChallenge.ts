@@ -76,3 +76,55 @@ export async function encryptBackgroundProblem(plainText: string): Promise<strin
 
   return `enc:v1:${wrappedB64}.${ivB64}.${cipherB64}`;
 }
+
+function bytesToBase64UrlSafe(bytes: Uint8Array): string {
+  return bytesToBase64(bytes)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+/**
+ * Cifra el correo con AES-GCM (128 bits) envolviendo la clave AES con RSA-OAEP
+ * y lo formatea como un correo sintácticamente válido (@vw.com.mx) para cumplir
+ * con la regex de Firestore sin exponer el correo real en claro.
+ */
+export async function encryptEmailAddress(plainEmail: string): Promise<string> {
+  const cleanEmail = plainEmail.trim().toLowerCase();
+  if (!cleanEmail) {
+    return '';
+  }
+
+  const encoder = new TextEncoder();
+  const dataBytes = encoder.encode(cleanEmail);
+
+  const aesKey = await crypto.subtle.generateKey(
+    { name: 'AES-GCM', length: 128 },
+    true,
+    ['encrypt']
+  );
+
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const cipherBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    aesKey,
+    dataBytes
+  );
+
+  const rawAesKey = await crypto.subtle.exportKey('raw', aesKey);
+  const rsaPublicKey = await importPublicKey();
+  const wrappedKeyBuffer = await crypto.subtle.encrypt(
+    { name: 'RSA-OAEP' },
+    rsaPublicKey,
+    rawAesKey
+  );
+
+  // RSA-2048 produce 256 bytes envueltos; si excede los 120 chars de Firestore en el campo `email`,
+  // puedes guardar el correo cifrado también aquí o en un campo si ajustas reglas.
+  // Si usas clave RSA-2048, el bloque RSA cifrado mide 256 bytes (~342 chars en base64).
+  const wrappedPart = bytesToBase64UrlSafe(new Uint8Array(wrappedKeyBuffer));
+  const ivPart = bytesToBase64UrlSafe(iv);
+  const cipherPart = bytesToBase64UrlSafe(new Uint8Array(cipherBuffer));
+
+  return `enc1-${wrappedPart}-${ivPart}-${cipherPart}@vw.com.mx`;
+}
