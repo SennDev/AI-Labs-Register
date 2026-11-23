@@ -2,115 +2,53 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /ia_labs_enero_registros/{docId} {
+      // Bloquea lectura, edición y borrado desde el cliente público
+      allow read, update, delete: if false;
 
-    // ===============================================================
-    // Procurement Academy · IA Labs Edición Enero
-    // Colección: ia_labs_enero_registros
-    // ===============================================================
+      // Solo permite crear si cumple con esquema, dominios y longitudes
+      allow create: if
+        request.resource.data.keys().hasAll([
+          'fullName', 'email', 'department', 'challengeTitle',
+          'backgroundProblem', 'category', 'participationType', 'createdAt'
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          'fullName', 'email', 'department', 'challengeTitle',
+          'backgroundProblem', 'category', 'participationType', 'teamMembers', 'createdAt'
+        ]) &&
 
+        request.resource.data.fullName is string &&
+        request.resource.data.fullName.size() >= 5 &&
+        request.resource.data.fullName.size() <= 100 &&
+
+        request.resource.data.email is string &&
+        request.resource.data.email.size() <= 120 &&
+        request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@(vw\\.com\\.mx|proveed-vw\\.com\\.mx|outlook\\.com)$') &&
+
+        request.resource.data.department is string &&
+        request.resource.data.department.size() >= 2 &&
+        request.resource.data.department.size() <= 100 &&
+
+        request.resource.data.challengeTitle is string &&
+        request.resource.data.challengeTitle.size() >= 10 &&
+        request.resource.data.challengeTitle.size() <= 120 &&
+
+        request.resource.data.backgroundProblem is string &&
+        request.resource.data.backgroundProblem.size() >= 120 &&
+        request.resource.data.backgroundProblem.size() <= 4500 &&
+
+        request.resource.data.category is string &&
+        request.resource.data.category.size() >= 3 &&
+        request.resource.data.category.size() <= 80 &&
+
+        request.resource.data.participationType in ['individual', 'equipo'] &&
+
+        request.resource.data.createdAt == request.time;
+    }
+
+    // Cualquier otra ruta permanece bloqueada por defecto
     match /{document=**} {
       allow read, write: if false;
-    }
-
-    function isValidId(id) {
-      return id is string
-        && id.size() >= 16
-        && id.size() <= 24
-        && id.matches('^IALAB-ENE-[A-Z0-9]{6}$');
-    }
-
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function isAllowedEmail(email) {
-      return email is string
-        && email.size() >= 6
-        && email.size() <= 120
-        && email.matches('^[a-zA-Z0-9._%+-]+@([vV][wW]\\.[cC][oO][mM]\\.[mM][xX]|[pP][rR][oO][vV][eE][eE][dD]-[vV][wW]\\.[cC][oO][mM]\\.[mM][xX]|[oO][uU][tT][lL][oO][oO][kK]\\.[cC][oO][mM])$');
-    }
-
-    function isAllowedCategory(category) {
-      return category is string
-        && category.size() >= 4
-        && category.size() <= 60
-        && category in [
-          'Automatización de tareas repetitivas',
-          'Análisis y cruce de datos',
-          'Gestión documental / reportes',
-          'Asistente de consulta / conocimiento',
-          'Otro'
-        ];
-    }
-
-    function isAllowedModality(modality, teammates) {
-      return modality is string
-        && teammates is string
-        && (
-          (modality == 'Individual' && teammates.size() == 0)
-          || (modality == 'En equipo' && teammates.size() <= 300)
-        );
-    }
-
-    function isValidRegistro(data) {
-      return data.keys().hasAll([
-          'folio',
-          'fullName',
-          'email',
-          'department',
-          'challengeTitle',
-          'problemDescription',
-          'category',
-          'modality',
-          'teammates',
-          'commitmentAccepted',
-          'edition',
-          'createdAt'
-        ])
-        && data.keys().hasOnly([
-          'folio',
-          'fullName',
-          'email',
-          'department',
-          'challengeTitle',
-          'problemDescription',
-          'category',
-          'modality',
-          'teammates',
-          'commitmentAccepted',
-          'edition',
-          'createdAt'
-        ])
-        && data.folio is string
-        && data.folio.size() >= 16
-        && data.folio.size() <= 24
-        && data.folio.matches('^IALAB-ENE-[A-Z0-9]{6}$')
-        && data.fullName is string
-        && data.fullName.size() >= 5
-        && data.fullName.size() <= 100
-        && isAllowedEmail(data.email)
-        && data.department is string
-        && data.department.size() >= 2
-        && data.department.size() <= 120
-        && data.challengeTitle is string
-        && data.challengeTitle.size() >= 10
-        && data.challengeTitle.size() <= 100
-        && data.problemDescription is string
-        && data.problemDescription.size() >= 80
-        && data.problemDescription.size() <= 2000
-        && isAllowedCategory(data.category)
-        && isAllowedModality(data.modality, data.teammates)
-        && data.commitmentAccepted is bool
-        && data.commitmentAccepted == true
-        && data.edition is string
-        && data.edition == 'IA Labs - Enero'
-        && data.createdAt is timestamp
-        && data.createdAt == request.time;
-    }
-
-    match /ia_labs_enero_registros/{registroId} {
-      allow read, update, delete: if false;
-      allow create: if isValidId(registroId) && isValidRegistro(incoming());
     }
   }
 }
