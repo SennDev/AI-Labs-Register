@@ -1,3 +1,5 @@
+import type { Language } from './i18n';
+
 export const ALLOWED_EMAIL_DOMAINS = [
   'vw.com.mx',
   'proveed-vw.com.mx',
@@ -96,6 +98,91 @@ export const FIELD_LIMITS = {
 export const COOLDOWN_MS = 45_000;
 export const COOLDOWN_STORAGE_KEY = 'ia_labs_enero_last_submit_ts';
 
+const VALIDATION_MESSAGES: Record<
+  Language,
+  {
+    fullNameRequired: string;
+    fullNameMin: (min: number) => string;
+    fullNameMax: (max: number) => string;
+    fullNameInvalid: string;
+    emailRequired: string;
+    emailMax: (max: number) => string;
+    emailDomainInvalid: string;
+    deptRequired: string;
+    deptDetailRequired: string;
+    deptCombinedMax: (max: number) => string;
+    titleRequired: string;
+    titleMin: (min: number) => string;
+    titleMax: (max: number) => string;
+    problemRequired: string;
+    problemRemaining: (missing: number, min: number) => string;
+    problemMax: (max: number) => string;
+    categoryInvalid: string;
+    modalityInvalid: string;
+    teammatesMax: (max: number) => string;
+    commitmentRequired: string;
+  }
+> = {
+  es: {
+    fullNameRequired: 'Ingresa tu nombre completo.',
+    fullNameMin: (min) => `Debe tener al menos ${min} caracteres.`,
+    fullNameMax: (max) => `No debe superar los ${max} caracteres.`,
+    fullNameInvalid:
+      'Usa únicamente letras y espacios válidos (sin números ni símbolos).',
+    emailRequired: 'Ingresa tu correo institucional o autorizado.',
+    emailMax: (max) => `El correo no debe superar ${max} caracteres.`,
+    emailDomainInvalid:
+      'Solo se permiten correos terminados en @vw.com.mx, @proveed-vw.com.mx o @outlook.com.',
+    deptRequired: 'Selecciona tu gerencia o área.',
+    deptDetailRequired:
+      'Especifica el nombre de tu gerencia o área (mínimo 2 caracteres).',
+    deptCombinedMax: (max) =>
+      `La gerencia y detalle no deben superar ${max} caracteres.`,
+    titleRequired: 'Escribe un título breve para tu reto.',
+    titleMin: (min) => `El título debe tener al menos ${min} caracteres.`,
+    titleMax: (max) => `El título no debe superar ${max} caracteres.`,
+    problemRequired: 'Describe el problema de fondo que deseas resolver.',
+    problemRemaining: (missing, min) =>
+      `Faltan ${missing} caracteres para completar el mínimo de ${min}.`,
+    problemMax: (max) =>
+      `Has superado el máximo permitido de ${max} caracteres.`,
+    categoryInvalid: 'Selecciona una categoría válida para el reto.',
+    modalityInvalid: 'Selecciona una modalidad de participación.',
+    teammatesMax: (max) => `No debe superar ${max} caracteres.`,
+    commitmentRequired:
+      'Debes confirmar tu compromiso para asistir a los IA Labs en enero.',
+  },
+  en: {
+    fullNameRequired: 'Please enter your full name.',
+    fullNameMin: (min) => `Must be at least ${min} characters long.`,
+    fullNameMax: (max) => `Must not exceed ${max} characters.`,
+    fullNameInvalid:
+      'Use letters and valid spaces only (no numbers or symbols).',
+    emailRequired: 'Please enter your corporate or authorized email address.',
+    emailMax: (max) => `Email must not exceed ${max} characters.`,
+    emailDomainInvalid:
+      'Only email addresses ending in @vw.com.mx, @proveed-vw.com.mx, or @outlook.com are allowed.',
+    deptRequired: 'Please select your department or area.',
+    deptDetailRequired:
+      'Please specify your department or area name (minimum 2 characters).',
+    deptCombinedMax: (max) =>
+      `Department and detail combined must not exceed ${max} characters.`,
+    titleRequired: 'Please enter a short title for your challenge.',
+    titleMin: (min) => `Title must be at least ${min} characters long.`,
+    titleMax: (max) => `Title must not exceed ${max} characters.`,
+    problemRequired: 'Please describe the underlying problem you want to solve.',
+    problemRemaining: (missing, min) =>
+      `${missing} more characters needed to reach the ${min}-character minimum.`,
+    problemMax: (max) =>
+      `You have exceeded the maximum limit of ${max} characters.`,
+    categoryInvalid: 'Please select a valid category for your challenge.',
+    modalityInvalid: 'Please select a participation format.',
+    teammatesMax: (max) => `Must not exceed ${max} characters.`,
+    commitmentRequired:
+      'Please confirm your commitment to attend the January IA Labs sessions.',
+  },
+};
+
 /**
  * Sanitizes text input by stripping HTML tags, javascript: schemes, and control characters.
  */
@@ -149,22 +236,25 @@ export function composeDepartment(
 
 export function validateField(
   field: keyof RegistrationFormInput,
-  input: RegistrationFormInput
+  input: RegistrationFormInput,
+  lang: Language = 'es'
 ): string | undefined {
+  const msg = VALIDATION_MESSAGES[lang];
+
   switch (field) {
     case 'fullName': {
       const clean = sanitizeText(input.fullName, false);
       if (!clean) {
-        return 'Please enter your full name.';
+        return msg.fullNameRequired;
       }
       if (clean.length < FIELD_LIMITS.fullNameMin) {
-        return `Must be at least ${FIELD_LIMITS.fullNameMin} characters long.`;
+        return msg.fullNameMin(FIELD_LIMITS.fullNameMin);
       }
       if (clean.length > FIELD_LIMITS.fullNameMax) {
-        return `Must not exceed ${FIELD_LIMITS.fullNameMax} characters.`;
+        return msg.fullNameMax(FIELD_LIMITS.fullNameMax);
       }
       if (!FULL_NAME_REGEX.test(clean)) {
-        return 'Use letters and valid spaces only (no numbers or symbols).';
+        return msg.fullNameInvalid;
       }
       return undefined;
     }
@@ -172,13 +262,13 @@ export function validateField(
     case 'email': {
       const normalized = normalizeEmail(input.email);
       if (!normalized) {
-        return 'Please enter your corporate or authorized email address.';
+        return msg.emailRequired;
       }
       if (normalized.length > FIELD_LIMITS.emailMax) {
-        return `Email must not exceed ${FIELD_LIMITS.emailMax} characters.`;
+        return msg.emailMax(FIELD_LIMITS.emailMax);
       }
       if (!EMAIL_DOMAIN_REGEX.test(normalized)) {
-        return 'Only email addresses ending in @vw.com.mx, @proveed-vw.com.mx, or @outlook.com are allowed.';
+        return msg.emailDomainInvalid;
       }
       return undefined;
     }
@@ -186,7 +276,7 @@ export function validateField(
     case 'departmentSelect': {
       const clean = sanitizeText(input.departmentSelect, false);
       if (!clean) {
-        return 'Please select your department or area.';
+        return msg.deptRequired;
       }
       return undefined;
     }
@@ -195,11 +285,14 @@ export function validateField(
       const cleanSelect = sanitizeText(input.departmentSelect, false);
       const cleanDetail = sanitizeText(input.departmentDetail, false);
       if (cleanSelect === 'Otro (especificar)' && cleanDetail.length < 2) {
-        return 'Please specify your department or area name (minimum 2 characters).';
+        return msg.deptDetailRequired;
       }
-      const composed = composeDepartment(input.departmentSelect, input.departmentDetail);
+      const composed = composeDepartment(
+        input.departmentSelect,
+        input.departmentDetail
+      );
       if (composed.length > FIELD_LIMITS.departmentMax) {
-        return `Department and detail combined must not exceed ${FIELD_LIMITS.departmentMax} characters.`;
+        return msg.deptCombinedMax(FIELD_LIMITS.departmentMax);
       }
       return undefined;
     }
@@ -207,13 +300,13 @@ export function validateField(
     case 'challengeTitle': {
       const clean = sanitizeText(input.challengeTitle, false);
       if (!clean) {
-        return 'Please enter a short title for your challenge.';
+        return msg.titleRequired;
       }
       if (clean.length < FIELD_LIMITS.challengeTitleMin) {
-        return `Title must be at least ${FIELD_LIMITS.challengeTitleMin} characters long.`;
+        return msg.titleMin(FIELD_LIMITS.challengeTitleMin);
       }
       if (clean.length > FIELD_LIMITS.challengeTitleMax) {
-        return `Title must not exceed ${FIELD_LIMITS.challengeTitleMax} characters.`;
+        return msg.titleMax(FIELD_LIMITS.challengeTitleMax);
       }
       return undefined;
     }
@@ -221,13 +314,16 @@ export function validateField(
     case 'problemDescription': {
       const clean = sanitizeText(input.problemDescription, true);
       if (!clean) {
-        return 'Please describe the underlying problem you want to solve.';
+        return msg.problemRequired;
       }
       if (clean.length < FIELD_LIMITS.problemDescriptionMin) {
-        return `${FIELD_LIMITS.problemDescriptionMin - clean.length} more characters needed to reach the ${FIELD_LIMITS.problemDescriptionMin}-character minimum.`;
+        return msg.problemRemaining(
+          FIELD_LIMITS.problemDescriptionMin - clean.length,
+          FIELD_LIMITS.problemDescriptionMin
+        );
       }
       if (clean.length > FIELD_LIMITS.problemDescriptionMax) {
-        return `You have exceeded the maximum limit of ${FIELD_LIMITS.problemDescriptionMax} characters.`;
+        return msg.problemMax(FIELD_LIMITS.problemDescriptionMax);
       }
       return undefined;
     }
@@ -238,14 +334,14 @@ export function validateField(
         !clean ||
         !(CHALLENGE_CATEGORIES as readonly string[]).includes(clean)
       ) {
-        return 'Please select a valid category for your challenge.';
+        return msg.categoryInvalid;
       }
       return undefined;
     }
 
     case 'modality': {
       if (input.modality !== 'Individual' && input.modality !== 'En equipo') {
-        return 'Please select a participation format.';
+        return msg.modalityInvalid;
       }
       return undefined;
     }
@@ -254,7 +350,7 @@ export function validateField(
       if (input.modality === 'En equipo') {
         const clean = sanitizeText(input.teammates, false);
         if (clean.length > FIELD_LIMITS.teammatesMax) {
-          return `Must not exceed ${FIELD_LIMITS.teammatesMax} characters.`;
+          return msg.teammatesMax(FIELD_LIMITS.teammatesMax);
         }
       }
       return undefined;
@@ -262,14 +358,17 @@ export function validateField(
 
     case 'commitmentAccepted': {
       if (!input.commitmentAccepted) {
-        return 'Please confirm your commitment to attend the January IA Labs sessions.';
+        return msg.commitmentRequired;
       }
       return undefined;
     }
   }
 }
 
-export function validateRegistrationForm(input: RegistrationFormInput): {
+export function validateRegistrationForm(
+  input: RegistrationFormInput,
+  lang: Language = 'es'
+): {
   isValid: boolean;
   errors: ValidationErrors;
 } {
@@ -288,7 +387,7 @@ export function validateRegistrationForm(input: RegistrationFormInput): {
 
   const errors: ValidationErrors = {};
   for (const field of fields) {
-    const err = validateField(field, input);
+    const err = validateField(field, input, lang);
     if (err) {
       errors[field] = err;
     }

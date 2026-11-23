@@ -1,7 +1,13 @@
 import { useState } from 'react';
+import { TRANSLATIONS, type Language } from '../utils/i18n';
 
-export function Footer() {
+interface FooterProps {
+  lang: Language;
+}
+
+export function Footer({ lang }: FooterProps) {
   const [logoError, setLogoError] = useState(false);
+  const t = TRANSLATIONS[lang].footer;
 
   return (
     <footer className="bg-[#002733] dark:bg-[#021016] text-white mt-12 py-10 px-4 sm:px-6 border-t border-transparent dark:border-white/10 transition-colors duration-200">
@@ -23,23 +29,21 @@ export function Footer() {
         </div>
 
         <nav
-          aria-label="Institutional links"
+          aria-label={t.navAria}
           className="flex flex-wrap items-center gap-6 text-xs sm:text-sm text-white/75"
         >
           <a href="#inicio" className="hover:text-[#C2FE06] transition-colors">
-            Overview
+            {t.overview}
           </a>
           <a href="#guia" className="hover:text-[#C2FE06] transition-colors">
-            Problem Guide
+            {t.guide}
           </a>
           <a href="#registro" className="hover:text-[#C2FE06] transition-colors">
-            Registration
+            {t.registration}
           </a>
         </nav>
 
-        <p className="text-xs text-white/65">
-          Procurement AI Academy · IA Labs January Edition
-        </p>
+        <p className="text-xs text-white/65">{t.copyright}</p>
       </div>
     </footer>
   );

@@ -6,6 +6,12 @@ import { Navbar } from './components/Navbar';
 import { ProblemGuideSection } from './components/ProblemGuideSection';
 import { RegistrationForm } from './components/RegistrationForm';
 import { testConnection } from './firebase-config';
+import {
+  LANG_STORAGE_KEY,
+  TRANSLATIONS,
+  getInitialLanguage,
+  type Language,
+} from './utils/i18n';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -23,6 +29,7 @@ function getInitialTheme(): ThemeMode {
 
 export default function App() {
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
+  const [lang, setLang] = useState<Language>(getInitialLanguage);
   const [templateRequest, setTemplateRequest] = useState<{
     text: string;
     nonce: number;
@@ -41,6 +48,16 @@ export default function App() {
       // Ignore storage errors in restricted environments
     }
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = TRANSLATIONS[lang].meta.pageTitle;
+    try {
+      window.localStorage.setItem(LANG_STORAGE_KEY, lang);
+    } catch {
+      // Ignore storage errors in restricted environments
+    }
+  }, [lang]);
 
   useEffect(() => {
     void testConnection();
@@ -94,25 +111,29 @@ export default function App() {
   };
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary lang={lang}>
       <div className="min-h-screen flex flex-col bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] transition-colors duration-200">
         <Navbar
           theme={theme}
+          lang={lang}
           onToggleTheme={toggleTheme}
+          onChangeLang={setLang}
           onNavigateToForm={scrollToForm}
         />
         <main className="flex-1">
-          <HeroSection onNavigateToForm={scrollToForm} />
+          <HeroSection lang={lang} onNavigateToForm={scrollToForm} />
           <ProblemGuideSection
             theme={theme}
+            lang={lang}
             onApplyTemplate={handleApplyTemplate}
           />
           <RegistrationForm
             theme={theme}
+            lang={lang}
             templateRequest={templateRequest}
           />
         </main>
-        <Footer />
+        <Footer lang={lang} />
       </div>
     </ErrorBoundary>
   );

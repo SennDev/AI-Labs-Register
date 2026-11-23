@@ -29,6 +29,12 @@
           if (window.localStorage.getItem('ia_labs_theme') === 'dark') {
             document.documentElement.classList.add('dark');
           }
+          var savedLang = window.localStorage.getItem('ia_labs_lang');
+          if (savedLang === 'en' || savedLang === 'es') {
+            document.documentElement.lang = savedLang;
+          } else {
+            document.documentElement.lang = 'es';
+          }
         } catch (e) {}
       })();
     </script>

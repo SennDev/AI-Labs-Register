@@ -1,57 +1,24 @@
 import { useState } from 'react';
 import { ClipboardCheck, Compass, Sparkles, TrendingUp } from 'lucide-react';
 import type { ThemeMode } from '../App';
+import { TRANSLATIONS, type Language } from '../utils/i18n';
 import { triggerRipple } from './Navbar';
 
 interface ProblemGuideSectionProps {
   theme: ThemeMode;
+  lang: Language;
   onApplyTemplate: (templateText: string) => void;
 }
 
-const GUIDE_CARDS = [
-  {
-    step: '01.',
-    title: 'Current workflow or bottleneck',
-    description:
-      'Describe which repetitive task, manual data entry, or approval delay slows down your daily workflow.',
-    example:
-      'Example: “Every Monday we manually consolidate 12 RFQ spreadsheets in different supplier layouts before we can compare pricing.”',
-    icon: Compass,
-  },
-  {
-    step: '02.',
-    title: 'Time, quality, or operational impact',
-    description:
-      'Quantify or explain the operational cost of the problem: hours spent, rework cycles, or delayed supplier responses.',
-    example:
-      'Example: “It takes 6 hours per buyer each week and leads to missed price validity dates or delivery terms.”',
-    icon: TrendingUp,
-  },
-  {
-    step: '03.',
-    title: 'Expected AI outcome',
-    description:
-      'Define the concrete deliverable or improvement you want to validate during the January sessions, without worrying about the technical stack.',
-    example:
-      'Example: “A prototype that reads incoming quotes and automatically builds a comparison matrix flagging deviations.”',
-    icon: Sparkles,
-  },
-] as const;
-
-const PROBLEM_TEMPLATE = `1. Current workflow or bottleneck:
-Describe step by step which task or handoff causes delays or manual rework today.
-
-2. Time, quality, or operational impact:
-Indicate how many hours it takes, how often it happens, and what errors or risks it creates.
-
-3. Expected outcome:
-Explain what you want to achieve or validate during the January IA Labs sessions.`;
+const CARD_ICONS = [Compass, TrendingUp, Sparkles] as const;
 
 export function ProblemGuideSection({
   theme,
+  lang,
   onApplyTemplate,
 }: ProblemGuideSectionProps) {
   const [iconError, setIconError] = useState(false);
+  const t = TRANSLATIONS[lang].guide;
 
   const badgeSrc =
     theme === 'dark'
@@ -75,14 +42,18 @@ export function ProblemGuideSection({
                 />
               )}
               <span className="text-sm font-semibold text-[#008C82] dark:text-[#2DD4BF]">
-                Submission Guide
+                {t.kicker}
               </span>
             </div>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] dark:text-white tracking-tight [text-wrap:balance]">
-              How should you frame your underlying problem?
+              {t.title}
             </h2>
             <p className="mt-2.5 text-sm sm:text-base text-[#002733]/75 dark:text-[#CBE0E0] leading-relaxed">
-              The strongest <strong className="font-semibold text-[#002733] dark:text-white">IA Labs</strong> cases start with a clearly defined operational pain point rather than a specific tool. Structure your proposal around these three elements:
+              {t.subtitlePart1}
+              <strong className="font-semibold text-[#002733] dark:text-white">
+                {t.subtitleLabs}
+              </strong>
+              {t.subtitlePart2}
             </p>
           </div>
 
@@ -90,7 +61,7 @@ export function ProblemGuideSection({
             type="button"
             onClick={(e) => {
               triggerRipple(e);
-              onApplyTemplate(PROBLEM_TEMPLATE);
+              onApplyTemplate(t.templateText);
             }}
             className="btn-neo inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold self-start md:self-auto shrink-0 cursor-pointer min-h-[44px]"
           >
@@ -98,13 +69,13 @@ export function ProblemGuideSection({
               className="w-4 h-4 text-[#008C82] dark:text-[#C2FE06] shrink-0"
               aria-hidden="true"
             />
-            Use template in form
+            {t.useTemplateBtn}
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {GUIDE_CARDS.map((card, index) => {
-            const Icon = card.icon;
+          {t.cards.map((card, index) => {
+            const Icon = CARD_ICONS[index];
             return (
               <article
                 key={card.step}

@@ -1,8 +1,10 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { TRANSLATIONS, type Language } from '../utils/i18n';
 
 interface Props {
   children: ReactNode;
+  lang?: Language;
 }
 
 interface State {
@@ -33,6 +35,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
+      const lang: Language = this.props.lang ?? 'es';
+      const t = TRANSLATIONS[lang].errorBoundary;
       return (
         <div className="min-h-screen bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] flex items-center justify-center p-6">
           <div className="neo-surface max-w-lg w-full rounded-3xl p-8 text-center">
@@ -40,10 +44,10 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-7 h-7" aria-hidden="true" />
             </div>
             <h1 className="text-2xl font-bold text-[#002733] dark:text-white mb-3">
-              Unable to load view
+              {t.title}
             </h1>
             <p className="text-sm text-[#002733]/75 dark:text-[#CBE0E0] mb-6 leading-relaxed">
-              A temporary interruption occurred while rendering the application. You can try reloading the current view.
+              {t.description}
             </p>
             <button
               type="button"
@@ -51,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
               className="btn-lime inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" aria-hidden="true" />
-              Try again
+              {t.retryBtn}
             </button>
           </div>
         </div>

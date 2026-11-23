@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { TRANSLATIONS } from './i18n';
 import {
   CATEGORY_LABELS,
   CHALLENGE_CATEGORIES,
@@ -63,7 +64,12 @@ test('email validation allows only @vw.com.mx, @proveed-vw.com.mx, and @outlook.
     'GersonEM8900@OUTLOOK.COM',
   ]) {
     assert.equal(
-      validateField('email', { ...base, email: allowed }),
+      validateField('email', { ...base, email: allowed }, 'es'),
+      undefined,
+      `Expected ${allowed} to be valid`
+    );
+    assert.equal(
+      validateField('email', { ...base, email: allowed }, 'en'),
       undefined,
       `Expected ${allowed} to be valid`
     );
@@ -76,20 +82,27 @@ test('email validation allows only @vw.com.mx, @proveed-vw.com.mx, and @outlook.
     'no-at-sign.com',
     '   ',
   ]) {
-    assert.ok(
-      validateField('email', { ...base, email: blocked }),
-      `Expected ${blocked} to be rejected`
-    );
+    assert.ok(validateField('email', { ...base, email: blocked }, 'es'));
+    assert.ok(validateField('email', { ...base, email: blocked }, 'en'));
   }
+
+  assert.match(
+    validateField('email', { ...base, email: 'bad@gmail.com' }, 'es') ?? '',
+    /Solo se permiten correos/
+  );
+  assert.match(
+    validateField('email', { ...base, email: 'bad@gmail.com' }, 'en') ?? '',
+    /Only email addresses ending in/
+  );
 });
 
 test('fullName validation enforces letters/spaces and 5..100 characters', () => {
   const base = makeValidInput();
-  assert.ok(validateField('fullName', { ...base, fullName: 'Ana' }));
-  assert.ok(validateField('fullName', { ...base, fullName: '     ' }));
-  assert.ok(validateField('fullName', { ...base, fullName: 'Carlos 123' }));
+  assert.ok(validateField('fullName', { ...base, fullName: 'Ana' }, 'es'));
+  assert.ok(validateField('fullName', { ...base, fullName: '     ' }, 'en'));
+  assert.ok(validateField('fullName', { ...base, fullName: 'Carlos 123' }, 'en'));
   assert.equal(
-    validateField('fullName', { ...base, fullName: 'José Ángel Pérez' }),
+    validateField('fullName', { ...base, fullName: 'José Ángel Pérez' }, 'es'),
     undefined
   );
 });
@@ -122,25 +135,32 @@ test('department composition preserves department codes and optional detail', ()
   assert.equal(composeDepartment('M-BM', ''), 'M-BM');
 });
 
-test('every stored category and modality has an English display label', () => {
+test('every stored category and modality has translations in both es and en', () => {
   for (const cat of CHALLENGE_CATEGORIES) {
     assert.ok(CATEGORY_LABELS[cat].length > 0);
+    assert.ok(TRANSLATIONS.es.form.categories[cat].length > 0);
+    assert.ok(TRANSLATIONS.en.form.categories[cat].length > 0);
   }
   assert.equal(MODALITY_LABELS.Individual, 'Individual');
   assert.equal(MODALITY_LABELS['En equipo'], 'Team');
+  assert.equal(TRANSLATIONS.es.form.modalities['En equipo'], 'En equipo');
+  assert.equal(TRANSLATIONS.en.form.modalities['En equipo'], 'Team');
 });
 
 test('validateRegistrationForm accepts valid complete payload and rejects incomplete ones', () => {
   const valid = makeValidInput();
-  const okResult = validateRegistrationForm(valid);
+  const okResult = validateRegistrationForm(valid, 'es');
   assert.equal(okResult.isValid, true);
   assert.deepEqual(okResult.errors, {});
 
-  const invalidResult = validateRegistrationForm({
-    ...valid,
-    email: 'test@gmail.com',
-    commitmentAccepted: false,
-  });
+  const invalidResult = validateRegistrationForm(
+    {
+      ...valid,
+      email: 'test@gmail.com',
+      commitmentAccepted: false,
+    },
+    'en'
+  );
   assert.equal(invalidResult.isValid, false);
   assert.ok(invalidResult.errors.email);
   assert.ok(invalidResult.errors.commitmentAccepted);

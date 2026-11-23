@@ -17,13 +17,12 @@ import {
   Users,
 } from 'lucide-react';
 import type { ThemeMode } from '../App';
+import { TRANSLATIONS, type Language } from '../utils/i18n';
 import {
-  CATEGORY_LABELS,
   CHALLENGE_CATEGORIES,
   COOLDOWN_STORAGE_KEY,
   DEPARTMENT_OPTIONS,
   FIELD_LIMITS,
-  MODALITY_LABELS,
   buildSanitizedRegistroPayload,
   generateFolio,
   getRemainingCooldownSeconds,
@@ -40,6 +39,7 @@ import { triggerRipple } from './Navbar';
 
 interface RegistrationFormProps {
   theme: ThemeMode;
+  lang: Language;
   templateRequest: { text: string; nonce: number } | null;
 }
 
@@ -52,7 +52,7 @@ interface SubmittedReceipt {
   category: ChallengeCategory;
   modality: ParticipationModality;
   teammates: string;
-  submittedAtLabel: string;
+  submittedAt: Date;
 }
 
 const INITIAL_INPUT: RegistrationFormInput = {
@@ -70,16 +70,22 @@ const INITIAL_INPUT: RegistrationFormInput = {
 
 export function RegistrationForm({
   theme,
+  lang,
   templateRequest,
 }: RegistrationFormProps) {
   const formId = useId();
+  const tForm = TRANSLATIONS[lang].form;
+  const tReceipt = TRANSLATIONS[lang].receipt;
+
   const [form, setForm] = useState<RegistrationFormInput>(INITIAL_INPUT);
   const [touched, setTouched] = useState<
     Partial<Record<keyof RegistrationFormInput, boolean>>
   >({});
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitErrorKind, setSubmitErrorKind] = useState<
+    'cooldown' | 'network' | null
+  >(null);
   const [receipt, setReceipt] = useState<SubmittedReceipt | null>(null);
   const [cooldownSeconds, setCooldownSeconds] = useState<number>(() => {
     try {
@@ -93,6 +99,24 @@ export function RegistrationForm({
 
   const problemTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+
+  // Re-translate active validation errors immediately when user switches ES/EN
+  useEffect(() => {
+    setErrors((prevErrors) => {
+      const keys = Object.keys(prevErrors) as Array<keyof ValidationErrors>;
+      if (keys.length === 0) {
+        return prevErrors;
+      }
+      const nextErrors: ValidationErrors = {};
+      for (const field of keys) {
+        const msg = validateField(field, form, lang);
+        if (msg) {
+          nextErrors[field] = msg;
+        }
+      }
+      return nextErrors;
+    });
+  }, [lang, form]);
 
   // Update local cooldown countdown every second while active
   useEffect(() => {
@@ -143,7 +167,7 @@ export function RegistrationForm({
     setForm((prev) => {
       const next = { ...prev, [field]: value };
       if (forceTouch || touched[field]) {
-        const fieldError = validateField(field, next);
+        const fieldError = validateField(field, next, lang);
         setErrors((prevErrors) => {
           const updated = { ...prevErrors };
           if (fieldError) {
@@ -152,7 +176,7 @@ export function RegistrationForm({
             delete updated[field];
           }
           if (field === 'departmentSelect' && (forceTouch || touched.departmentDetail)) {
-            const detailErr = validateField('departmentDetail', next);
+            const detailErr = validateField('departmentDetail', next, lang);
             if (detailErr) {
               updated.departmentDetail = detailErr;
             } else {
@@ -160,7 +184,7 @@ export function RegistrationForm({
             }
           }
           if (field === 'modality') {
-            const teammatesErr = validateField('teammates', next);
+            const teammatesErr = validateField('teammates', next, lang);
             if (teammatesErr) {
               updated.teammates = teammatesErr;
             } else {
@@ -175,14 +199,14 @@ export function RegistrationForm({
     if (forceTouch) {
       setTouched((prev) => ({ ...prev, [field]: true }));
     }
-    if (submitError) {
-      setSubmitError(null);
+    if (submitErrorKind) {
+      setSubmitErrorKind(null);
     }
   };
 
   const handleBlur = (field: keyof RegistrationFormInput) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    const err = validateField(field, form);
+    const err = validateField(field, form, lang);
     setErrors((prev) => {
       const updated = { ...prev };
       if (err) {
@@ -238,9 +262,7 @@ export function RegistrationForm({
       );
       if (remaining > 0) {
         setCooldownSeconds(remaining);
-        setSubmitError(
-          `To prevent duplicate submissions, please wait ${remaining} seconds before submitting another challenge.`
-        );
+        setSubmitErrorKind('cooldown');
         return;
       }
     } catch {
@@ -261,7 +283,7 @@ export function RegistrationForm({
     };
     setTouched(allTouched);
 
-    const validation = validateRegistrationForm(form);
+    const validation = validateRegistrationForm(form, lang);
     setErrors(validation.errors);
 
     if (!validation.isValid) {
@@ -270,7 +292,7 @@ export function RegistrationForm({
     }
 
     setIsSubmitting(true);
-    setSubmitError(null);
+    setSubmitErrorKind(null);
 
     try {
       const folio = generateFolio();
@@ -294,16 +316,11 @@ export function RegistrationForm({
         category: payload.category,
         modality: payload.modality,
         teammates: payload.teammates,
-        submittedAtLabel: new Intl.DateTimeFormat('en-US', {
-          dateStyle: 'medium',
-          timeStyle: 'short',
-        }).format(new Date()),
+        submittedAt: new Date(),
       });
     } catch (error) {
       console.error('Error saving registration to Firestore:', error);
-      setSubmitError(
-        'We could not complete your registration right now. Please check your connection and try again.'
-      );
+      setSubmitErrorKind('network');
     } finally {
       setIsSubmitting(false);
     }
@@ -313,7 +330,7 @@ export function RegistrationForm({
     setForm(INITIAL_INPUT);
     setTouched({});
     setErrors({});
-    setSubmitError(null);
+    setSubmitErrorKind(null);
     setReceipt(null);
   };
 
@@ -326,7 +343,19 @@ export function RegistrationForm({
       ? './assets/Icono_App_512.png'
       : './assets/Icono_Turquesa.png';
 
+  const submitErrorMessage =
+    submitErrorKind === 'cooldown'
+      ? tForm.cooldownError(cooldownSeconds)
+      : submitErrorKind === 'network'
+        ? tForm.submitError
+        : null;
+
   if (receipt) {
+    const formattedDate = new Intl.DateTimeFormat(tReceipt.dateLocale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(receipt.submittedAt);
+
     return (
       <section id="registro" className="scroll-mt-20 py-10 sm:py-16 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
@@ -343,10 +372,10 @@ export function RegistrationForm({
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#008C82] dark:text-[#2DD4BF] tracking-wide">
-                    Registration confirmed · IA Labs January
+                    {tReceipt.confirmedKicker}
                   </p>
                   <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] dark:text-white">
-                    Submission received
+                    {tReceipt.title}
                   </h2>
                 </div>
               </div>
@@ -366,7 +395,7 @@ export function RegistrationForm({
             <div className="my-6 neo-navy-panel rounded-2xl p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-white/75 mb-1">
-                  Reference folio
+                  {tReceipt.folioLabel}
                 </p>
                 <p
                   className="font-mono-tabular text-2xl sm:text-3xl font-bold tracking-wider text-[#C2FE06]"
@@ -376,9 +405,11 @@ export function RegistrationForm({
                 </p>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-xs text-white/75 mb-1">Submitted on</p>
+                <p className="text-xs text-white/75 mb-1">
+                  {tReceipt.submittedOnLabel}
+                </p>
                 <p className="text-sm font-medium text-white">
-                  {receipt.submittedAtLabel}
+                  {formattedDate}
                 </p>
               </div>
             </div>
@@ -387,7 +418,7 @@ export function RegistrationForm({
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-8">
               <div className="neo-inset rounded-2xl p-4">
                 <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
-                  Applicant
+                  {tReceipt.applicantLabel}
                 </dt>
                 <dd className="font-semibold text-[#002733] dark:text-white break-words">
                   {receipt.fullName}
@@ -395,7 +426,7 @@ export function RegistrationForm({
               </div>
               <div className="neo-inset rounded-2xl p-4">
                 <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
-                  Authorized email
+                  {tReceipt.emailLabel}
                 </dt>
                 <dd className="font-mono-tabular text-[13px] font-medium text-[#002733] dark:text-white break-all">
                   {receipt.email}
@@ -403,7 +434,7 @@ export function RegistrationForm({
               </div>
               <div className="neo-inset rounded-2xl p-4">
                 <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
-                  Department / Area
+                  {tReceipt.deptLabel}
                 </dt>
                 <dd className="font-medium text-[#002733] dark:text-white break-words">
                   {receipt.department}
@@ -411,22 +442,22 @@ export function RegistrationForm({
               </div>
               <div className="neo-inset rounded-2xl p-4">
                 <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
-                  Category & Format
+                  {tReceipt.categoryModalityLabel}
                 </dt>
                 <dd className="font-medium text-[#002733] dark:text-white">
-                  {CATEGORY_LABELS[receipt.category]} · {MODALITY_LABELS[receipt.modality]}
+                  {tForm.categories[receipt.category]} · {tForm.modalities[receipt.modality]}
                 </dd>
               </div>
               <div className="neo-inset rounded-2xl p-4 sm:col-span-2">
                 <dt className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] mb-1">
-                  Challenge title
+                  {tReceipt.challengeTitleLabel}
                 </dt>
                 <dd className="font-semibold text-[#002733] dark:text-white">
                   {receipt.challengeTitle}
                 </dd>
                 {receipt.teammates && (
                   <p className="mt-2 text-xs text-[#002733]/75 dark:text-[#CBE0E0]">
-                    Team members: {receipt.teammates}
+                    {tReceipt.teamMembersLabel}: {receipt.teammates}
                   </p>
                 )}
               </div>
@@ -440,10 +471,10 @@ export function RegistrationForm({
                 />
                 {cooldownSeconds > 0 ? (
                   <span className="font-mono-tabular">
-                    Duplicate protection active ({cooldownSeconds}s until next submission)
+                    {tReceipt.cooldownActive(cooldownSeconds)}
                   </span>
                 ) : (
-                  <span>Ready to submit another challenge if needed.</span>
+                  <span>{tReceipt.cooldownReady}</span>
                 )}
               </div>
 
@@ -459,7 +490,7 @@ export function RegistrationForm({
                   className="w-4 h-4 text-[#008C82] dark:text-[#C2FE06]"
                   aria-hidden="true"
                 />
-                Submit another challenge
+                {tReceipt.registerAnotherBtn}
               </button>
             </div>
           </div>
@@ -474,13 +505,13 @@ export function RegistrationForm({
         <div className="neo-surface-elevated rounded-3xl p-6 sm:p-10 md:p-12 reveal-item is-visible">
           <div className="mb-8 pb-6 border-b border-[#002733]/10 dark:border-white/10">
             <p className="text-sm font-semibold text-[#008C82] dark:text-[#2DD4BF] mb-2">
-              Registration Form
+              {tForm.kicker}
             </p>
             <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#002733] dark:text-white tracking-tight [text-wrap:balance]">
-              Submit your challenge for IA Labs · January
+              {tForm.title}
             </h2>
             <p className="mt-2 text-sm sm:text-base text-[#002733]/75 dark:text-[#CBE0E0] leading-relaxed max-w-2xl">
-              Complete the fields below with a clear description of your operational problem. All submissions are encrypted client-side and stored privately.
+              {tForm.subtitle}
             </p>
           </div>
 
@@ -497,7 +528,8 @@ export function RegistrationForm({
                   htmlFor={`${formId}-fullName`}
                   className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
-                  Full name <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                  {tForm.fullNameLabel}{' '}
+                  <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -506,7 +538,7 @@ export function RegistrationForm({
                     type="text"
                     autoComplete="name"
                     maxLength={FIELD_LIMITS.fullNameMax}
-                    placeholder="e.g. Laura Hernandez Vazquez"
+                    placeholder={tForm.fullNamePlaceholder}
                     value={form.fullName}
                     onChange={(e) => updateField('fullName', e.target.value)}
                     onBlur={() => handleBlur('fullName')}
@@ -540,7 +572,7 @@ export function RegistrationForm({
                   </p>
                 ) : (
                   <p className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]">
-                    Minimum 5 characters, letters and spaces only.
+                    {tForm.fullNameHint}
                   </p>
                 )}
               </div>
@@ -550,7 +582,8 @@ export function RegistrationForm({
                   htmlFor={`${formId}-email`}
                   className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
-                  Authorized email address <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                  {tForm.emailLabel}{' '}
+                  <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -560,7 +593,7 @@ export function RegistrationForm({
                     autoComplete="email"
                     inputMode="email"
                     maxLength={FIELD_LIMITS.emailMax}
-                    placeholder="first.last@vw.com.mx"
+                    placeholder={tForm.emailPlaceholder}
                     value={form.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     onBlur={() => handleBlur('email')}
@@ -595,7 +628,7 @@ export function RegistrationForm({
                     id={`${formId}-email-help`}
                     className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]"
                   >
-                    Accepts @vw.com.mx, @proveed-vw.com.mx, or @outlook.com only.
+                    {tForm.emailHint}
                   </p>
                 )}
               </div>
@@ -608,7 +641,8 @@ export function RegistrationForm({
                   htmlFor={`${formId}-departmentSelect`}
                   className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
-                  Department / Area <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                  {tForm.deptLabel}{' '}
+                  <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <select
                   id={`${formId}-departmentSelect`}
@@ -632,7 +666,7 @@ export function RegistrationForm({
                         : ''
                   }`}
                 >
-                  <option value="">Select your department...</option>
+                  <option value="">{tForm.deptPlaceholder}</option>
                   {DEPARTMENT_OPTIONS.map((option) => (
                     <option key={option} value={option}>
                       {option}
@@ -657,8 +691,8 @@ export function RegistrationForm({
                   className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                 >
                   {form.departmentSelect === 'Otro (especificar)'
-                    ? 'Specify your department or area'
-                    : 'Sub-area or team cell (optional)'}
+                    ? tForm.deptDetailOtherLabel
+                    : tForm.deptDetailLabel}
                   {form.departmentSelect === 'Otro (especificar)' && (
                     <span className="text-[#008C82] dark:text-[#C2FE06]"> *</span>
                   )}
@@ -670,8 +704,8 @@ export function RegistrationForm({
                   maxLength={80}
                   placeholder={
                     form.departmentSelect === 'Otro (especificar)'
-                      ? 'Name of your department or unit'
-                      : 'e.g. Powertrain / Plant CapEx'
+                      ? tForm.deptDetailOtherPlaceholder
+                      : tForm.deptDetailPlaceholder
                   }
                   value={form.departmentDetail}
                   onChange={(e) =>
@@ -708,7 +742,8 @@ export function RegistrationForm({
                   htmlFor={`${formId}-challengeTitle`}
                   className="block text-sm font-semibold text-[#002733] dark:text-white"
                 >
-                  Challenge title <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                  {tForm.titleLabel}{' '}
+                  <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <span className="font-mono-tabular text-xs text-[#002733]/65 dark:text-[#9FC0C0]">
                   {cleanTitleLength} / {FIELD_LIMITS.challengeTitleMax}
@@ -720,7 +755,7 @@ export function RegistrationForm({
                   name="challengeTitle"
                   type="text"
                   maxLength={FIELD_LIMITS.challengeTitleMax}
-                  placeholder="e.g. Automated comparison of supplier RFQ quotes"
+                  placeholder={tForm.titlePlaceholder}
                   value={form.challengeTitle}
                   onChange={(e) =>
                     updateField('challengeTitle', e.target.value)
@@ -757,7 +792,7 @@ export function RegistrationForm({
                   id={`${formId}-challengeTitle-help`}
                   className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]"
                 >
-                  Clear summary between 10 and 100 characters.
+                  {tForm.titleHint}
                 </p>
               )}
             </div>
@@ -765,7 +800,8 @@ export function RegistrationForm({
             {/* Challenge Category */}
             <fieldset>
               <legend className="block text-sm font-semibold text-[#002733] dark:text-white mb-3">
-                Challenge category <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                {tForm.categoryLabel}{' '}
+                <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
               </legend>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {CHALLENGE_CATEGORIES.map((categoryOption, idx) => {
@@ -807,7 +843,7 @@ export function RegistrationForm({
                         )}
                       </span>
                       <span className="leading-snug">
-                        {CATEGORY_LABELS[categoryOption]}
+                        {tForm.categories[categoryOption]}
                       </span>
                     </label>
                   );
@@ -831,7 +867,8 @@ export function RegistrationForm({
                   htmlFor={`${formId}-problemDescription`}
                   className="block text-sm font-semibold text-[#002733] dark:text-white"
                 >
-                  Underlying problem to solve <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                  {tForm.problemLabel}{' '}
+                  <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </label>
                 <span
                   className={`font-mono-tabular text-xs font-semibold ${
@@ -840,7 +877,8 @@ export function RegistrationForm({
                       : 'text-[#002733]/65 dark:text-[#9FC0C0]'
                   }`}
                 >
-                  {cleanProblemLength} / {FIELD_LIMITS.problemDescriptionMax} characters
+                  {cleanProblemLength} / {FIELD_LIMITS.problemDescriptionMax}{' '}
+                  {tForm.charsUnit}
                 </span>
               </div>
 
@@ -850,7 +888,7 @@ export function RegistrationForm({
                 name="problemDescription"
                 rows={6}
                 maxLength={FIELD_LIMITS.problemDescriptionMax}
-                placeholder="Describe the current workflow, the bottleneck, its impact on hours or quality, and the outcome you hope to validate with AI..."
+                placeholder={tForm.problemPlaceholder}
                 value={form.problemDescription}
                 onChange={(e) =>
                   updateField('problemDescription', e.target.value)
@@ -881,8 +919,8 @@ export function RegistrationForm({
                 </div>
                 <span className="text-xs text-[#002733]/65 dark:text-[#9FC0C0]">
                   {cleanProblemLength >= FIELD_LIMITS.problemDescriptionMin
-                    ? 'Minimum length reached (80+ characters)'
-                    : `Minimum required: ${FIELD_LIMITS.problemDescriptionMin} characters`}
+                    ? tForm.minReached
+                    : tForm.minRequired(FIELD_LIMITS.problemDescriptionMin)}
                 </span>
               </div>
 
@@ -902,7 +940,8 @@ export function RegistrationForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <fieldset>
                 <legend className="block text-sm font-semibold text-[#002733] dark:text-white mb-3">
-                  Participation format <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
+                  {tForm.modalityLabel}{' '}
+                  <span className="text-[#008C82] dark:text-[#C2FE06]">*</span>
                 </legend>
                 <div className="grid grid-cols-2 gap-3">
                   {(['Individual', 'En equipo'] as const).map((mode) => {
@@ -934,7 +973,7 @@ export function RegistrationForm({
                           aria-hidden="true"
                         />
                         <span className="whitespace-nowrap">
-                          {MODALITY_LABELS[mode]}
+                          {tForm.modalities[mode]}
                         </span>
                       </label>
                     );
@@ -948,14 +987,14 @@ export function RegistrationForm({
                     htmlFor={`${formId}-teammates`}
                     className="block text-sm font-semibold text-[#002733] dark:text-white mb-2"
                   >
-                    Team members (optional)
+                    {tForm.teammatesLabel}
                   </label>
                   <input
                     id={`${formId}-teammates`}
                     name="teammates"
                     type="text"
                     maxLength={FIELD_LIMITS.teammatesMax}
-                    placeholder="e.g. Ana Lopez, Roberto Diaz"
+                    placeholder={tForm.teammatesPlaceholder}
                     value={form.teammates}
                     onChange={(e) => updateField('teammates', e.target.value)}
                     onBlur={() => handleBlur('teammates')}
@@ -978,7 +1017,7 @@ export function RegistrationForm({
                     </p>
                   ) : (
                     <p className="mt-2 text-xs text-[#002733]/60 dark:text-[#9FC0C0]">
-                      Include up to 300 characters with your teammates&apos; names.
+                      {tForm.teammatesHint}
                     </p>
                   )}
                 </div>
@@ -1009,9 +1048,13 @@ export function RegistrationForm({
                 />
                 <span className="text-sm text-[#002733] dark:text-[#E6F2F2] leading-relaxed">
                   <strong className="font-semibold text-[#002733] dark:text-white">
-                    I confirm my commitment to attend
-                  </strong>{' '}
-                  the hands-on <strong className="font-semibold text-[#002733] dark:text-white">IA Labs · January</strong> sessions at Procurement Academy to develop and validate this challenge.
+                    {tForm.commitmentBold1}
+                  </strong>
+                  {tForm.commitmentMid}
+                  <strong className="font-semibold text-[#002733] dark:text-white">
+                    {tForm.commitmentBold2}
+                  </strong>
+                  {tForm.commitmentEnd}
                 </span>
               </label>
 
@@ -1028,20 +1071,20 @@ export function RegistrationForm({
             </div>
 
             {/* Submission error banner */}
-            {submitError && (
+            {submitErrorMessage && (
               <div
                 role="alert"
                 className="rounded-2xl bg-[#fef2f2] dark:bg-[#2A1216] border border-[#b42318]/25 dark:border-[#F97066]/40 p-4 flex items-start gap-3 text-sm text-[#b42318] dark:text-[#FDA29B]"
               >
                 <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
-                <span>{submitError}</span>
+                <span>{submitErrorMessage}</span>
               </div>
             )}
 
             {/* Submit action */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
               <p className="text-xs text-[#002733]/65 dark:text-[#9FC0C0] leading-relaxed">
-                Upon submission, your proposal is encrypted client-side and stored in Firestore with domain validation and an official server timestamp.
+                {tForm.privacyNote}
               </p>
 
               <button
@@ -1053,17 +1096,17 @@ export function RegistrationForm({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
-                    Submitting challenge...
+                    {tForm.submittingBtn}
                   </>
                 ) : cooldownSeconds > 0 ? (
                   <>
                     <Clock className="w-5 h-5" aria-hidden="true" />
-                    Available in {cooldownSeconds}s
+                    {tForm.cooldownBtn(cooldownSeconds)}
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" aria-hidden="true" />
-                    Submit challenge
+                    {tForm.submitBtn}
                   </>
                 )}
               </button>

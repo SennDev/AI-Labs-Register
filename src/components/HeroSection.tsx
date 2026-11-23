@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowRight, Calendar, Layers, Users } from 'lucide-react';
+import { TRANSLATIONS, type Language } from '../utils/i18n';
 import { triggerRipple } from './Navbar';
 
 interface HeroSectionProps {
+  lang: Language;
   onNavigateToForm: () => void;
 }
 
-export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
+export function HeroSection({ lang, onNavigateToForm }: HeroSectionProps) {
   const [whiteLogoError, setWhiteLogoError] = useState(false);
   const [appIconError, setAppIconError] = useState(false);
+  const t = TRANSLATIONS[lang].hero;
+
+  const highlightIcons = [Calendar, Users, Layers] as const;
 
   return (
     <section
@@ -38,17 +43,20 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-white/80 tracking-wide">
                   <span className="text-[#C2FE06] font-semibold">IA Labs</span>
                   <span aria-hidden="true">·</span>
-                  <span>January Edition</span>
+                  <span>{t.edition}</span>
                 </div>
               </div>
 
               <h1 className="font-display text-[clamp(1.75rem,3.6vw,3.25rem)] font-extrabold leading-[1.14] tracking-tight text-white [text-wrap:balance] mb-5">
-                Submit a real procurement problem and prototype its AI solution.
+                {t.title}
               </h1>
 
               <p className="text-base sm:text-lg text-white/85 leading-relaxed max-w-2xl mb-8">
-                During the hands-on <strong className="text-white font-semibold">IA Labs · January</strong> sessions at{' '}
-                <strong className="text-white font-semibold">Procurement Academy</strong>, we will work directly on real day-to-day operational bottlenecks to design and validate practical Artificial Intelligence prototypes.
+                {t.descPart1}
+                <strong className="text-white font-semibold">{t.descLabs}</strong>
+                {t.descPart2}
+                <strong className="text-white font-semibold">{t.descAcademy}</strong>
+                {t.descPart3}
               </p>
             </div>
 
@@ -61,7 +69,7 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 }}
                 className="btn-lime inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm sm:text-base font-bold cursor-pointer min-h-[44px]"
               >
-                Submit my challenge
+                {t.ctaPrimary}
                 <ArrowRight className="w-4 h-4 shrink-0" aria-hidden="true" />
               </button>
 
@@ -69,7 +77,7 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 href="#guia"
                 className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium text-white/90 hover:text-[#C2FE06] transition-colors min-h-[44px]"
               >
-                How to frame your problem
+                {t.ctaSecondary}
                 <ArrowDown className="w-4 h-4 shrink-0" aria-hidden="true" />
               </a>
             </div>
@@ -94,65 +102,44 @@ export function HeroSection({ onNavigateToForm }: HeroSectionProps) {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-[#008C82] dark:text-[#2DD4BF] tracking-wide">
-                    Open Call
+                    {t.openCall}
                   </p>
                   <h2 className="font-display text-xl font-bold text-[#002733] dark:text-white leading-snug">
-                    IA Labs · January
+                    {t.labTitle}
                   </h2>
                 </div>
               </div>
 
               <div className="space-y-4 border-t border-[#002733]/10 dark:border-white/10 pt-5">
-                <div className="flex items-start gap-3.5">
-                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
-                    <Calendar className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#002733] dark:text-white">
-                      Hands-on sessions in January
-                    </p>
-                    <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
-                      Guided coaching to move from an operational bottleneck to a working prototype.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5">
-                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
-                    <Users className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#002733] dark:text-white">
-                      Individual or team format
-                    </p>
-                    <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
-                      Submit a solo initiative or collaborate with colleagues from your department.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5">
-                  <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
-                    <Layers className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#002733] dark:text-white">
-                      No prior coding required
-                    </p>
-                    <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
-                      What matters most is clearly articulating the business pain point and its impact.
-                    </p>
-                  </div>
-                </div>
+                {t.highlights.map((item, idx) => {
+                  const Icon = highlightIcons[idx];
+                  return (
+                    <div key={item.title} className="flex items-start gap-3.5">
+                      <div className="neo-inset w-9 h-9 rounded-xl flex items-center justify-center text-[#008C82] dark:text-[#2DD4BF] shrink-0 mt-0.5">
+                        <Icon className="w-4 h-4" aria-hidden="true" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-[#002733] dark:text-white">
+                          {item.title}
+                        </p>
+                        <p className="text-xs sm:text-sm text-[#002733]/72 dark:text-[#CBE0E0] leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             <div className="mt-6 pt-5 border-t border-[#002733]/10 dark:border-white/10">
               <p className="text-xs text-[#002733]/70 dark:text-[#CBE0E0] leading-relaxed">
-                Registration open for{' '}
+                {t.domainsPrefix}
                 <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@vw.com.mx</span>,{' '}
-                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@proveed-vw.com.mx</span>, and{' '}
-                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@outlook.com</span> addresses.
+                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@proveed-vw.com.mx</span>
+                {t.domainsAnd}
+                <span className="font-mono-tabular font-semibold text-[#002733] dark:text-white">@outlook.com</span>
+                {t.domainsSuffix}
               </p>
             </div>
           </aside>
