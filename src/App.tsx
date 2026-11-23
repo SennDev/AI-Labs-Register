@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DotGridBackground } from './components/DotGridBackground';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Footer } from './components/Footer';
 import { HeroSection } from './components/HeroSection';
@@ -112,7 +113,8 @@ export default function App() {
 
   return (
     <ErrorBoundary lang={lang}>
-      <div className="min-h-screen flex flex-col bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] transition-colors duration-200">
+      <div className="relative min-h-screen flex flex-col bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] transition-colors duration-200">
+        <DotGridBackground theme={theme} />
         <Navbar
           theme={theme}
           lang={lang}
@@ -120,20 +122,22 @@ export default function App() {
           onChangeLang={setLang}
           onNavigateToForm={scrollToForm}
         />
-        <main className="flex-1">
-          <HeroSection lang={lang} onNavigateToForm={scrollToForm} />
-          <ProblemGuideSection
-            theme={theme}
-            lang={lang}
-            onApplyTemplate={handleApplyTemplate}
-          />
-          <RegistrationForm
-            theme={theme}
-            lang={lang}
-            templateRequest={templateRequest}
-          />
-        </main>
-        <Footer lang={lang} />
+        <div className="relative z-10 flex-1 flex flex-col">
+          <main className="flex-1">
+            <HeroSection lang={lang} onNavigateToForm={scrollToForm} />
+            <ProblemGuideSection
+              theme={theme}
+              lang={lang}
+              onApplyTemplate={handleApplyTemplate}
+            />
+            <RegistrationForm
+              theme={theme}
+              lang={lang}
+              templateRequest={templateRequest}
+            />
+          </main>
+          <Footer lang={lang} />
+        </div>
       </div>
     </ErrorBoundary>
   );
