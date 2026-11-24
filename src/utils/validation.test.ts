@@ -145,6 +145,12 @@ test('every stored category and modality has translations in both es and en', ()
   assert.equal(MODALITY_LABELS['En equipo'], 'Team');
   assert.equal(TRANSLATIONS.es.form.modalities['En equipo'], 'En equipo');
   assert.equal(TRANSLATIONS.en.form.modalities['En equipo'], 'Team');
+
+  for (const lang of ['es', 'en'] as const) {
+    assert.ok(TRANSLATIONS[lang].splash.title.length > 0);
+    assert.ok(TRANSLATIONS[lang].splash.status.length > 0);
+    assert.ok(TRANSLATIONS[lang].splash.kicker.length > 0);
+  }
 });
 
 test('validateRegistrationForm accepts valid complete payload and rejects incomplete ones', () => {

@@ -6,6 +6,7 @@ import { HeroSection } from './components/HeroSection';
 import { Navbar } from './components/Navbar';
 import { ProblemGuideSection } from './components/ProblemGuideSection';
 import { RegistrationForm } from './components/RegistrationForm';
+import { SplashScreen } from './components/SplashScreen';
 import { testConnection } from './firebase-config';
 import {
   LANG_STORAGE_KEY,
@@ -114,6 +115,7 @@ export default function App() {
   return (
     <ErrorBoundary lang={lang}>
       <div className="relative min-h-screen flex flex-col bg-[#F0F6F6] dark:bg-[#041820] text-[#002733] dark:text-[#F0F6F6] transition-colors duration-200">
+        <SplashScreen theme={theme} lang={lang} />
         <DotGridBackground theme={theme} />
         <Navbar
           theme={theme}

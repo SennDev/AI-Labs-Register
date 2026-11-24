@@ -20,6 +20,12 @@ export interface TranslationDictionary {
   meta: {
     pageTitle: string;
   };
+  splash: {
+    badgeAlt: string;
+    kicker: string;
+    title: string;
+    status: string;
+  };
   nav: {
     homeAria: string;
     primaryNavAria: string;
@@ -144,6 +150,12 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
   es: {
     meta: {
       pageTitle: 'IA Labs · Edición Enero — Procurement Academy',
+    },
+    splash: {
+      badgeAlt: 'Insignia de Procurement Academy IA Labs',
+      kicker: 'Procurement Academy',
+      title: 'IA Labs · Edición Enero',
+      status: 'Preparando entorno de postulación...',
     },
     nav: {
       homeAria: 'Inicio de Procurement Academy IA Labs',
@@ -331,6 +343,12 @@ Explica qué te gustaría lograr o validar en las sesiones de IA Labs en enero.`
   en: {
     meta: {
       pageTitle: 'IA Labs · January Edition — Procurement Academy',
+    },
+    splash: {
+      badgeAlt: 'Procurement Academy IA Labs Badge',
+      kicker: 'Procurement Academy',
+      title: 'IA Labs · January Edition',
+      status: 'Preparing registration portal...',
     },
     nav: {
       homeAria: 'Procurement Academy IA Labs home',
